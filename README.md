@@ -13,7 +13,21 @@ A self-hostable Go API service that provides URL shortening and client IP detect
 - **IP Detection** - Extract client IP addresses with support for proxied requests (X-Forwarded-For, X-Real-IP)
 - **Ephemeral Secret Sharing** - Create one time use links for secret sharing
 - **Badger Database** - Embedded key-value store with automatic TTL-based link expiration
+- **CLI Tool** - Command line tool for interacting with the api.
+
+## Server Deployment
+docker run -p 8080:8080 \
+    -v ./data:/data \
+    -e REDIRECT_HOST=https://your-seqre-server.com \
+    -e REDIRECT_PORT=:8443 \
+    piheta/seqre:latest
+
+## CLI Usage
+seqre config set <https://your-seqre-server.com:8443> // (Optional) Override default server with your own
+seqre config get
+seqre ip
+seqre url example.com
 
 ## Roadmap
 - Secret sharing
-- CLI tool
+- Fragments for private short urls
