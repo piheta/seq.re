@@ -30,5 +30,5 @@ func InitEnv() {
 		slog.Warn("No .env file found, Using default environment variables")
 	}
 
-	slog.With("host", Config.RedirectHost).With("port", Config.RedirectPort).Info("ENV Loaded")
+	slog.With("redirect_host", Config.RedirectHost).With("redirect_port", Config.RedirectPort).Info("ENV Loaded")
 }
