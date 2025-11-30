@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -30,7 +32,9 @@ func getIP(serverURL string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -61,7 +65,9 @@ func getShortenedURL(serverURL, url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
@@ -83,11 +89,11 @@ func getShortenedURL(serverURL, url string) (string, error) {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: seqre <command> [args]")
-		fmt.Println("Commands:")
-		fmt.Println("  url <URL>              Create a shortened URL")
-		fmt.Println("  ip                     Get your IP address")
-		fmt.Println("  config set <server>    Set the server URL")
+		_, _ = fmt.Fprint(os.Stdout, "Usage: seqre <command> [args]\n")
+		_, _ = fmt.Fprint(os.Stdout, "Commands:\n")
+		_, _ = fmt.Fprint(os.Stdout, "  url <URL>              Create a shortened URL\n")
+		_, _ = fmt.Fprint(os.Stdout, "  ip                     Get your IP address\n")
+		_, _ = fmt.Fprint(os.Stdout, "  config set <server>    Set the server URL\n")
 		os.Exit(1)
 	}
 
@@ -96,15 +102,15 @@ func main() {
 	// Handle config command specially (doesn't need server connection)
 	if command == "config" {
 		if len(os.Args) < 4 || os.Args[2] != "set" {
-			fmt.Println("Usage: seqre config set <server>")
+			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre config set <server>\n")
 			os.Exit(1)
 		}
 		err := saveConfig(os.Args[3])
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			slog.Error("Failed to save config", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
-		fmt.Printf("Server URL set to: %s\n", os.Args[3])
+		_, _ = fmt.Fprintf(os.Stdout, "Server URL set to: %s\n", os.Args[3])
 		return
 	}
 
@@ -113,27 +119,27 @@ func main() {
 	switch command {
 	case "url":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: seqre url <URL>")
+			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre url <URL>\n")
 			os.Exit(1)
 		}
 		url := normalizeURL(os.Args[2])
 		shortURL, err := getShortenedURL(serverURL, url)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			slog.Error("Failed to shorten URL", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
-		fmt.Println(shortURL)
+		_, _ = fmt.Fprintln(os.Stdout, shortURL)
 
 	case "ip":
 		ip, err := getIP(serverURL)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			slog.Error("Failed to get IP", slog.String("error", err.Error()))
 			os.Exit(1)
 		}
-		fmt.Println(ip)
+		_, _ = fmt.Fprintln(os.Stdout, ip)
 
 	default:
-		fmt.Printf("Unknown command: %s\n", command)
+		slog.Error("Unknown command", slog.String("command", command))
 		os.Exit(1)
 	}
 }
@@ -159,7 +165,7 @@ func loadConfig() (Config, error) {
 		return Config{}, nil
 	}
 
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(filepath.Clean(configPath))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return Config{}, nil
@@ -177,12 +183,12 @@ func loadConfig() (Config, error) {
 func saveConfig(serverURL string) error {
 	configPath := getConfigPath()
 	if configPath == "" {
-		return fmt.Errorf("could not determine config path")
+		return errors.New("could not determine config path")
 	}
 
 	// Create directory if it doesn't exist
 	configDir := filepath.Dir(configPath)
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -192,7 +198,7 @@ func saveConfig(serverURL string) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write config: %w", err)
 	}
 	return nil
@@ -205,7 +211,7 @@ func getServerURL() string {
 
 	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
+		slog.Warn("Failed to load config", slog.String("error", err.Error()))
 	}
 	if cfg.Server != "" {
 		return cfg.Server
