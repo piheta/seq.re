@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	badger "github.com/dgraph-io/badger/v4"
+	"time"
 )
 
 type LinkRepo struct {
@@ -17,7 +18,8 @@ func NewLinkRepo(db *badger.DB) *LinkRepo {
 func (r *LinkRepo) Create(link *Link) error {
 	return r.db.Update(func(txn *badger.Txn) error {
 		data, _ := json.Marshal(link)
-		return txn.Set([]byte(link.Short), data)
+		entry := badger.NewEntry([]byte(link.Short), data).WithTTL(time.Until(link.ExpiresAt))
+		return txn.SetEntry(entry)
 	})
 }
 
