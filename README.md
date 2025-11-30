@@ -25,10 +25,26 @@ docker run -p 8080:8080 \
 ```
 
 ## CLI Usage
-seqre config set <https://your-seqre-server.com:8443> // (Optional) Override default server with your own
+
+Configure the server URL (optional, defaults to `https://seq.re`):
+```bash
+seqre config set https://your-seqre-server.com:8443
+```
+
+Get the configured server URL:
+```bash
 seqre config get
+```
+
+Get your IP Public address:
+```bash
 seqre ip
+```
+
+Create a shortened URL:
+```bash
 seqre url example.com
+```
 
 ## Roadmap
 - Secret sharing
