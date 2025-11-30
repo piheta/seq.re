@@ -202,7 +202,7 @@ func TestShortCodeUniqueness(t *testing.T) {
 
 	// Create 100 links and verify all have unique short codes
 	shortCodes := make(map[string]bool)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		created, err := service.CreateLink("https://example.com/" + string(rune(i)))
 		if err != nil {
 			t.Fatalf("failed to create link %d: %v", i, err)
