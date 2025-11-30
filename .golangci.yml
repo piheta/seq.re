@@ -1,0 +1,61 @@
+version: "2"
+
+linters:
+  enable:
+    - gocritic
+    - nilnil
+    - gosec
+    - nilerr
+    - misspell
+    - exptostd
+    - iface
+    - importas
+    - sloglint
+    - bidichk
+    - bodyclose
+    - prealloc
+    - revive
+    - forbidigo
+    - contextcheck
+    - staticcheck
+  settings:
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: line-length-limit
+          disabled: true
+        - name: add-constant
+          disabled: true
+        - name: unused-receiver
+          disabled: true
+        - name: cognitive-complexity
+          disabled: true
+        - name: cyclomatic
+          disabled: true
+        - name: function-length
+          disabled: true
+        - name: import-shadowing
+          disabled: true
+        - name: argument-limit
+          disabled: true
+        - name: dot-imports
+          disabled: true
+        - name: if-return
+          disabled: true
+        - name: struct-tag
+          disabled: true
+        - name: package-comments
+          disabled: true
+      enable-all-rules: true
+    forbidigo:
+      forbid:
+        - pattern: '^fmt\.Print.*$'
+          msg: "Use log/slog for structured logging instead of fmt.Print/Println"
+        - pattern: '^log\.Print.*$'
+          msg: "Use log/slog for structured logging instead of log.Print/Println"
+        - pattern: '^print(ln)?$'
+          msg: "Use log/slog for structured logging instead of builtin print()"
+    staticcheck:
+      checks:
+        - "-ST1001"

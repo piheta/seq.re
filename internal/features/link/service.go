@@ -41,7 +41,7 @@ func (s *LinkService) GetLinkByShort(short string) (*Link, error) {
 func (s *LinkService) createShort() string {
 	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 	b := make([]byte, 6)
-	rand.Read(b)
+	rand.Read(b) // nolint
 	for i := range b {
 		b[i] = chars[b[i]%byte(len(chars))]
 	}
