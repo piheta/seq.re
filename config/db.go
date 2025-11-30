@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 
 	badger "github.com/dgraph-io/badger/v4"
 )
@@ -12,16 +14,22 @@ var DB *badger.DB
 
 func ConnectDB() error {
 	var err error
-	var db *badger.DB
-
-	db, err = badger.Open(badger.DefaultOptions("/tmp/badger"))
+	DB, err = badger.Open(badger.DefaultOptions("/tmp/badger"))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	slog.Info("Database connection successful")
-	DB = db
+	// graceful shutdown
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		slog.Info("Shutting down...")
+		Close()
+		os.Exit(0)
+	}()
 
+	slog.Info("Database connection successful")
 	return nil
 }
 

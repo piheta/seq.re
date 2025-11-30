@@ -17,7 +17,9 @@ func main() {
 
 	shared.InitValidator()
 	config.InitEnv()
-	config.ConnectDB()
+	if err := config.ConnectDB(); err != nil {
+		log.Fatal(err)
+	}
 
 	linkRepo := link.NewLinkRepo(config.DB)
 
