@@ -8,8 +8,8 @@ import (
 )
 
 type config struct {
-	Host string
-	Port string
+	RedirectHost string
+	RedirectPort string
 }
 
 var Config config
@@ -22,13 +22,13 @@ func InitEnv() {
 	}
 
 	Config = config{
-		Host: os.Getenv("HOST"), // http://localhost
-		Port: os.Getenv("PORT"), // :8080
+		RedirectHost: os.Getenv("REDIRECT_HOST"), // http://localhost
+		RedirectPort: os.Getenv("REDIRECT_PORT"), // :8080
 	}
 
 	if !dotEnvLoaded {
 		slog.Warn("No .env file found, Using default environment variables")
 	}
 
-	slog.With("host", Config.Host).Info("ENV Loaded")
+	slog.With("host", Config.RedirectHost).With("port", Config.RedirectPort).Info("ENV Loaded")
 }

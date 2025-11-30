@@ -48,12 +48,12 @@ func main() {
 	addressHandler := address.NewAddressHandler(addressService)
 	linkHandler := link.NewLinkHandler(linkService)
 
-	mux.Handle("GET /api/ip", middleware.Public(addressHandler.GetPublicIP))
-	mux.Handle("POST /api/link", middleware.Public(linkHandler.CreateLink))
+	mux.Handle("GET /ip", middleware.Public(addressHandler.GetPublicIP))
+	mux.Handle("POST /link", middleware.Public(linkHandler.CreateLink))
 	mux.Handle("GET /{short}", middleware.Public(linkHandler.RedirectByShort))
 
 	server := &http.Server{
-		Addr:         ":8081",
+		Addr:         ":8080",
 		Handler:      middleware.RequestLogger(mux),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,

@@ -28,7 +28,7 @@ type Config struct {
 }
 
 func getIP(serverURL string) (string, error) {
-	resp, err := http.Get(serverURL + "/api/ip")
+	resp, err := http.Get(serverURL + "/ip")
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}
@@ -61,7 +61,7 @@ func getShortenedURL(serverURL, url string) (string, error) {
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	resp, err := http.Post(serverURL+"/api/link", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post(serverURL+"/link", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}
@@ -94,6 +94,7 @@ func main() {
 		_, _ = fmt.Fprint(os.Stdout, "  url <URL>              Create a shortened URL\n")
 		_, _ = fmt.Fprint(os.Stdout, "  ip                     Get your IP address\n")
 		_, _ = fmt.Fprint(os.Stdout, "  config set <server>    Set the server URL\n")
+		_, _ = fmt.Fprint(os.Stdout, "  config get             Get the server URL\n")
 		os.Exit(1)
 	}
 
@@ -101,16 +102,41 @@ func main() {
 
 	// Handle config command specially (doesn't need server connection)
 	if command == "config" {
-		if len(os.Args) < 4 || os.Args[2] != "set" {
-			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre config set <server>\n")
+		if len(os.Args) < 3 {
+			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre config <set|get> [server]\n")
 			os.Exit(1)
 		}
-		err := saveConfig(os.Args[3])
-		if err != nil {
-			slog.Error("Failed to save config", slog.String("error", err.Error()))
+
+		subcommand := os.Args[2]
+		switch subcommand {
+		case "set":
+			if len(os.Args) < 4 {
+				_, _ = fmt.Fprint(os.Stdout, "Usage: seqre config set <server>\n")
+				os.Exit(1)
+			}
+			err := saveConfig(os.Args[3])
+			if err != nil {
+				slog.Error("Failed to save config", slog.String("error", err.Error()))
+				os.Exit(1)
+			}
+			_, _ = fmt.Fprintf(os.Stdout, "Server URL set to: %s\n", os.Args[3])
+
+		case "get":
+			cfg, err := loadConfig()
+			if err != nil {
+				slog.Error("Failed to load config", slog.String("error", err.Error()))
+				os.Exit(1)
+			}
+			if cfg.Server == "" {
+				_, _ = fmt.Fprint(os.Stdout, "No server URL configured\n")
+			} else {
+				_, _ = fmt.Fprintf(os.Stdout, "Server URL: %s\n", cfg.Server)
+			}
+
+		default:
+			slog.Error("Unknown config subcommand", slog.String("subcommand", subcommand))
 			os.Exit(1)
 		}
-		_, _ = fmt.Fprintf(os.Stdout, "Server URL set to: %s\n", os.Args[3])
 		return
 	}
 
@@ -217,5 +243,5 @@ func getServerURL() string {
 		return cfg.Server
 	}
 
-	return "http://localhost:8081"
+	return "http://localhost:8080"
 }

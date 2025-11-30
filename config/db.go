@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log/slog"
+	"os"
 
 	badger "github.com/dgraph-io/badger/v4"
 )
@@ -10,13 +11,18 @@ import (
 var DB *badger.DB
 
 func ConnectDB() error {
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "/tmp/badger"
+	}
+
 	var err error
-	DB, err = badger.Open(badger.DefaultOptions("/tmp/badger"))
+	DB, err = badger.Open(badger.DefaultOptions(dbPath))
 	if err != nil {
 		return err
 	}
 
-	slog.Info("Database connection successful")
+	slog.Info("Database connection successful", slog.String("path", dbPath))
 	return nil
 }
 

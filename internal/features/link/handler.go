@@ -70,7 +70,7 @@ func (h *LinkHandler) CreateLink(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	shortURL := fmt.Sprintf("%s%s/%s", config.Config.Host, config.Config.Port, link.Short)
+	shortURL := fmt.Sprintf("%s%s/%s", config.Config.RedirectHost, config.Config.RedirectPort, link.Short)
 
 	return response.JSON(w, 201, shortURL)
 }
