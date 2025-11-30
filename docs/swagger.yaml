@@ -1,0 +1,76 @@
+definitions:
+  address.Address:
+    properties:
+      ip:
+        type: string
+    type: object
+  link.LinkRequest:
+    properties:
+      url:
+        type: string
+    required:
+    - url
+    type: object
+info:
+  contact: {}
+  title: Seq.re
+paths:
+  /{short}:
+    get:
+      description: Redirects to the original URL associated with the given short code
+      parameters:
+      - description: Short code
+        in: path
+        name: short
+        required: true
+        type: string
+      responses:
+        "301":
+          description: Redirect to original URL
+        "404":
+          description: Short code not found
+      summary: Redirect to original URL
+      tags:
+      - link
+  /api/ip:
+    get:
+      consumes:
+      - application/json
+      description: Returns the public IP address of the client making the request
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: IP address retrieved successfully
+          schema:
+            $ref: '#/definitions/address.Address'
+      summary: Get client public IP
+      tags:
+      - address
+  /api/link:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new shortened URL from the provided original URL
+      parameters:
+      - description: Link request with URL to shorten
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/link.LinkRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Shortened URL
+          schema:
+            type: string
+        "400":
+          description: Invalid request or URL format
+        "500":
+          description: Internal server error
+      summary: Create a shortened URL
+      tags:
+      - link
+swagger: "2.0"

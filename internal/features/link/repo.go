@@ -36,7 +36,7 @@ func (r *LinkRepo) GetByShort(short string) (*Link, error) {
 	})
 
 	if errors.Is(err, badger.ErrKeyNotFound) {
-		return nil, nil
+		return nil, err
 	}
 
 	return &link, err

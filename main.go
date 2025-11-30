@@ -10,8 +10,11 @@ import (
 	"github.com/piheta/seq.re/internal/features/address"
 	"github.com/piheta/seq.re/internal/features/link"
 	"github.com/piheta/seq.re/internal/shared"
+
+	_ "github.com/piheta/seq.re/docs"
 )
 
+// @Title Seq.re
 func main() {
 	mux := http.NewServeMux()
 
