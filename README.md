@@ -44,26 +44,26 @@ docker run -p 8080:8080 \
 
 **Important:** Store the encryption key securely! Without it, your database cannot be decrypted.
 
-## CLI Usage
+## CLI
 
-Configure the server URL (optional, defaults to `https://seq.re`):
+### Install
+
 ```bash
-seqre config set https://your-seqre-server.com:8443
+brew tap piheta/seqre
+brew install seqre
 ```
 
-Get the configured server URL:
-```bash
-seqre config get
-```
+Or download binaries [here](https://github.com/piheta/seq.re/releases)
 
-Get your IP Public address:
-```bash
-seqre ip
-```
+### Usage
 
-Create a shortened URL:
 ```bash
-seqre url example.com
+Usage: seqre <command> [args]
+Commands:
+  url <URL>              Create a shortened URL
+  ip                     Get your IP address
+  config set <server>    Set the server URL
+  config get             Get the server URL
 ```
 
 ## Roadmap
