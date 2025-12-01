@@ -5,7 +5,7 @@
 [![Go Lint](https://github.com/piheta/seq.re/actions/workflows/lint.yml/badge.svg)](https://github.com/piheta//actions/workflows/lint.yml)
 [![CodeQL](https://github.com/piheta/seq.re/actions/workflows/codeql.yml/badge.svg)](https://github.com/piheta/seq.re/security/code-scanning)
 
-A self-hostable collection of everyday utilities I got tired of using through ad-riddled, telemetry-heavy, closed-source services like TinyURL, whatismyipaddress.com, and others.
+A self-hostable collection of everyday utilities — URL shortening, IP lookup, and secret sharing — without the ads, telemetry, or third-party dependencies.
 
 ## Features
 
