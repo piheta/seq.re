@@ -55,7 +55,7 @@ brews:
     repository:
       owner: piheta
       name: homebrew-seqre
-      token: "{{ .Env.GITHUB_TOKEN }}"
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     commit_author:
       name: goreleaserbot
       email: bot@goreleaser.com
