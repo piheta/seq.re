@@ -6,7 +6,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/joho/godotenv v1.5.1
-	github.com/piheta/apicore v0.2.3
+	github.com/piheta/apicore v0.3.0
 	github.com/swaggo/swag v1.16.3
 	gopkg.in/yaml.v3 v3.0.1
 )

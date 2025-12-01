@@ -3,7 +3,7 @@ package link
 import "time"
 
 type LinkRequest struct {
-	URL string `json:"url" validate:"required,url"`
+	URL string `json:"url" validate:"required,notprivateip"`
 }
 
 type RedirectRequest struct {

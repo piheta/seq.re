@@ -39,9 +39,7 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 		return apierr.NewError(404, "url", "url not found")
 	}
 
-	http.Redirect(w, r, link.URL, http.StatusMovedPermanently)
-
-	return nil
+	return response.Redirect(w, r, link.URL)
 }
 
 // CreateLink creates a new shortened URL.
