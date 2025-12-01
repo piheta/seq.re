@@ -1,0 +1,69 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+
+builds:
+  - id: seqre
+    main: ./cmd/cli
+    binary: seqre
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: seqre
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+    builds:
+      - seqre
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^build:'
+      - Merge pull request
+      - Merge branch
+
+brews:
+  - name: seqre
+    repository:
+      owner: piheta
+      name: homebrew-seqre
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    directory: Formula
+    homepage: https://github.com/piheta/seq.re
+    description: "Self-hostable collection of everyday utilities - URL shortening, IP lookup, and secret sharing"
+    license: MIT
+    install: |
+      bin.install "seqre"
+    test: |
+      system "#{bin}/seqre", "--help"
