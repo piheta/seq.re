@@ -5,7 +5,7 @@
 [![Go Lint](https://github.com/piheta/seq.re/actions/workflows/lint.yml/badge.svg)](https://github.com/piheta//actions/workflows/lint.yml)
 [![CodeQL](https://github.com/piheta/seq.re/actions/workflows/codeql.yml/badge.svg)](https://github.com/piheta/seq.re/security/code-scanning)
 
-A self-hostable Go API service that provides URL shortening and client IP detection. 
+A self-hostable collection of everyday utilities I got tired of using through ad-riddled, telemetry-heavy, closed-source services like TinyURL, whatismyipaddress.com, and others.
 
 ## Features
 
@@ -16,6 +16,8 @@ A self-hostable Go API service that provides URL shortening and client IP detect
 - **CLI Tool** - Command line tool for interacting with the api.
 
 ## Server Deployment
+
+### Direct Deployment
 ```bash
 docker run -p 8080:8080 \
     -v ./data:/data \
@@ -23,6 +25,18 @@ docker run -p 8080:8080 \
     -e REDIRECT_PORT=:8443 \
     piheta/seqre:latest
 ```
+
+### Behind Reverse Proxy (Cloudflare, Nginx, etc.)
+```bash
+docker run -p 8080:8080 \
+    -v ./data:/data \
+    -e REDIRECT_HOST=https://your-seqre-server.com \
+    -e REDIRECT_PORT=:8443 \
+    -e BEHIND_PROXY=true \
+    piheta/seqre:latest
+```
+
+**Note:** Set `BEHIND_PROXY=true` when deploying behind Cloudflare, Nginx, or any reverse proxy to correctly detect client IP addresses.
 
 ## CLI Usage
 

@@ -2,12 +2,18 @@ package tests
 
 import (
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/piheta/seq.re/config"
 	"github.com/piheta/seq.re/internal/features/address"
 )
 
 func TestGetClientIPFromXForwardedFor(t *testing.T) {
+	_ = os.Setenv("BEHIND_PROXY", "true")
+	defer func() { _ = os.Unsetenv("BEHIND_PROXY") }()
+	config.InitEnv() // Reload config with new env var
+
 	service := address.NewAddressService()
 
 	req := httptest.NewRequest("GET", "http://example.com", nil)
@@ -21,6 +27,10 @@ func TestGetClientIPFromXForwardedFor(t *testing.T) {
 }
 
 func TestGetClientIPFromXForwardedForSingleIP(t *testing.T) {
+	_ = os.Setenv("BEHIND_PROXY", "true")
+	defer func() { _ = os.Unsetenv("BEHIND_PROXY") }()
+	config.InitEnv()
+
 	service := address.NewAddressService()
 
 	req := httptest.NewRequest("GET", "http://example.com", nil)
@@ -34,6 +44,10 @@ func TestGetClientIPFromXForwardedForSingleIP(t *testing.T) {
 }
 
 func TestGetClientIPFromXForwardedForWithWhitespace(t *testing.T) {
+	_ = os.Setenv("BEHIND_PROXY", "true")
+	defer func() { _ = os.Unsetenv("BEHIND_PROXY") }()
+	config.InitEnv()
+
 	service := address.NewAddressService()
 
 	req := httptest.NewRequest("GET", "http://example.com", nil)
@@ -47,6 +61,10 @@ func TestGetClientIPFromXForwardedForWithWhitespace(t *testing.T) {
 }
 
 func TestGetClientIPFromXRealIP(t *testing.T) {
+	_ = os.Setenv("BEHIND_PROXY", "true")
+	defer func() { _ = os.Unsetenv("BEHIND_PROXY") }()
+	config.InitEnv()
+
 	service := address.NewAddressService()
 
 	req := httptest.NewRequest("GET", "http://example.com", nil)
@@ -60,6 +78,10 @@ func TestGetClientIPFromXRealIP(t *testing.T) {
 }
 
 func TestGetClientIPXForwardedForTakesPreference(t *testing.T) {
+	_ = os.Setenv("BEHIND_PROXY", "true")
+	defer func() { _ = os.Unsetenv("BEHIND_PROXY") }()
+	config.InitEnv()
+
 	service := address.NewAddressService()
 
 	req := httptest.NewRequest("GET", "http://example.com", nil)
@@ -114,6 +136,10 @@ func TestGetClientIPIPv6FromRemoteAddr(t *testing.T) {
 }
 
 func TestGetClientIPIPv6FromXForwardedFor(t *testing.T) {
+	_ = os.Setenv("BEHIND_PROXY", "true")
+	defer func() { _ = os.Unsetenv("BEHIND_PROXY") }()
+	config.InitEnv()
+
 	service := address.NewAddressService()
 
 	req := httptest.NewRequest("GET", "http://example.com", nil)
@@ -127,6 +153,9 @@ func TestGetClientIPIPv6FromXForwardedFor(t *testing.T) {
 }
 
 func TestGetClientIPEmptyHeaders(t *testing.T) {
+	_ = os.Unsetenv("BEHIND_PROXY")
+	config.InitEnv()
+
 	service := address.NewAddressService()
 
 	req := httptest.NewRequest("GET", "http://example.com", nil)
@@ -136,6 +165,26 @@ func TestGetClientIPEmptyHeaders(t *testing.T) {
 
 	if result.IP != "127.0.0.1" {
 		t.Errorf("expected IP 127.0.0.1 from RemoteAddr, got %s", result.IP)
+	}
+}
+
+func TestGetClientIPIgnoresHeadersWhenNotBehindProxy(t *testing.T) {
+	// Make sure BEHIND_PROXY is not set
+	_ = os.Unsetenv("BEHIND_PROXY")
+	config.InitEnv()
+
+	service := address.NewAddressService()
+
+	req := httptest.NewRequest("GET", "http://example.com", nil)
+	req.RemoteAddr = "203.0.113.5:54321"
+	req.Header.Set("X-Forwarded-For", "192.168.1.1") // Should be ignored
+	req.Header.Set("X-Real-IP", "10.0.0.1")          // Should be ignored
+
+	result := service.GetClientIP(req)
+
+	// Should use RemoteAddr, not spoofed headers
+	if result.IP != "203.0.113.5" {
+		t.Errorf("expected IP from RemoteAddr (203.0.113.5), got %s (headers should be ignored)", result.IP)
 	}
 }
 
@@ -156,6 +205,10 @@ func TestAddressServiceCreation(t *testing.T) {
 }
 
 func TestGetClientIPConsistency(t *testing.T) {
+	_ = os.Setenv("BEHIND_PROXY", "true")
+	defer func() { _ = os.Unsetenv("BEHIND_PROXY") }()
+	config.InitEnv()
+
 	service := address.NewAddressService()
 
 	req := httptest.NewRequest("GET", "http://example.com", nil)

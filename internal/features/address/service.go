@@ -4,6 +4,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/piheta/seq.re/config"
 )
 
 type AddressService struct {
@@ -14,24 +16,24 @@ func NewAddressService() *AddressService {
 }
 
 func (s *AddressService) GetClientIP(r *http.Request) Address {
-	address := Address{""}
+	behindProxy := config.Config.BehindProxy
 
-	// Check X-Forwarded-For first (can be comma-separated list)
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		ips := strings.Split(xff, ",")
-		address.IP = strings.TrimSpace(ips[0]) // First IP is the original client
-		return address
+	if behindProxy {
+		// Behind reverse proxy - trust proxy headers
+		// Check X-Forwarded-For first (can be comma-separated list)
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			ips := strings.Split(xff, ",")
+			return Address{IP: strings.TrimSpace(ips[0])} // First IP is the original client
+		}
+
+		// Check X-Real-IP
+		if xri := r.Header.Get("X-Real-IP"); xri != "" {
+			return Address{IP: xri}
+		}
 	}
 
-	// Check X-Real-IP
-	if xri := r.Header.Get("X-Real-IP"); xri != "" {
-		address.IP = xri
-		return address
-	}
-
-	// Fall back to RemoteAddr
+	// Direct connection or proxy headers not available
+	// Use RemoteAddr (cannot be spoofed)
 	host, _, _ := net.SplitHostPort(r.RemoteAddr)
-	address.IP = host
-
-	return address
+	return Address{IP: host}
 }

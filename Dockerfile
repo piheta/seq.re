@@ -18,6 +18,7 @@ COPY --from=builder /app/seqre-server /seqre-server
 ENV REDIRECT_HOST=http://localhost
 ENV REDIRECT_PORT=:8080
 ENV DB_PATH=/data/badger
+ENV BEHIND_PROXY=false
 
 VOLUME ["/data"]
 

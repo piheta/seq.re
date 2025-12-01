@@ -10,6 +10,7 @@ import (
 type config struct {
 	RedirectHost string
 	RedirectPort string
+	BehindProxy  bool
 }
 
 var Config config
@@ -22,8 +23,9 @@ func InitEnv() {
 	}
 
 	Config = config{
-		RedirectHost: os.Getenv("REDIRECT_HOST"), // http://localhost
-		RedirectPort: os.Getenv("REDIRECT_PORT"), // :8080
+		RedirectHost: os.Getenv("REDIRECT_HOST"),          // http://localhost
+		RedirectPort: os.Getenv("REDIRECT_PORT"),          // :8080
+		BehindProxy:  os.Getenv("BEHIND_PROXY") == "true", // Required in order to determine sender ip
 	}
 
 	if !dotEnvLoaded {
