@@ -28,7 +28,7 @@ type Config struct {
 }
 
 func getIP(serverURL string) (string, error) {
-	resp, err := http.Get(serverURL + "/ip")
+	resp, err := http.Get(serverURL + "/api/ip")
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}
@@ -61,7 +61,7 @@ func getShortenedURL(serverURL, url string) (string, error) {
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	resp, err := http.Post(serverURL+"/link", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post(serverURL+"/api/links", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}

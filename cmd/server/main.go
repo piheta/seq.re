@@ -49,8 +49,8 @@ func main() {
 	addressHandler := address.NewAddressHandler(addressService)
 	linkHandler := link.NewLinkHandler(linkService)
 
-	mux.Handle("GET /ip", middleware.Public(addressHandler.GetPublicIP))
-	mux.Handle("POST /link", middleware.Public(linkHandler.CreateLink))
+	mux.Handle("GET /api/ip", middleware.Public(addressHandler.GetPublicIP))
+	mux.Handle("POST /api/links", middleware.Public(linkHandler.CreateLink))
 
 	// Apply rate limiting to redirect endpoint: 2 requests per second with burst of 5
 	rateLimitedRedirect := localmw.RateLimit(rate.Limit(2), 5)(middleware.Public(linkHandler.RedirectByShort))

@@ -52,7 +52,7 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 // @Success 201 {string} string "Shortened URL"
 // @Failure 400 "Invalid request or URL format"
 // @Failure 500 "Internal server error"
-// @Router /api/link [post]
+// @Router /api/links [post]
 func (h *LinkHandler) CreateLink(w http.ResponseWriter, r *http.Request) error {
 	var linkReq LinkRequest
 	if err := json.NewDecoder(r.Body).Decode(&linkReq); err != nil {
