@@ -8,9 +8,11 @@ import (
 )
 
 type config struct {
-	RedirectHost string
-	RedirectPort string
-	BehindProxy  bool
+	RedirectHost    string
+	RedirectPort    string
+	BehindProxy     bool
+	DBPath          string
+	DBEncryptionKey string
 }
 
 var Config config
@@ -23,9 +25,11 @@ func InitEnv() {
 	}
 
 	Config = config{
-		RedirectHost: os.Getenv("REDIRECT_HOST"),          // http://localhost
-		RedirectPort: os.Getenv("REDIRECT_PORT"),          // :8080
-		BehindProxy:  os.Getenv("BEHIND_PROXY") == "true", // Required in order to determine sender ip
+		RedirectHost:    os.Getenv("REDIRECT_HOST"),          // http://localhost
+		RedirectPort:    os.Getenv("REDIRECT_PORT"),          // :8080
+		BehindProxy:     os.Getenv("BEHIND_PROXY") == "true", // Required in order to determine sender ip
+		DBPath:          os.Getenv("DB_PATH"),
+		DBEncryptionKey: os.Getenv("DB_ENCRYPTION_KEY"),
 	}
 
 	if !dotEnvLoaded {
