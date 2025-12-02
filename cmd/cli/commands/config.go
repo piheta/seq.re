@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/piheta/seq.re/cmd/cli/client"
 	"github.com/piheta/seq.re/cmd/cli/config"
@@ -15,11 +16,16 @@ func ConfigSet(serverURL, cliVersion string) error {
 	serverVersion, err := apiClient.GetVersion()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stdout, "Warning: Could not verify server version: %v\n", err)
-	} else if serverVersion.Version != cliVersion {
-		_, _ = fmt.Fprint(os.Stdout, "Warning: Version mismatch detected!\n")
-		_, _ = fmt.Fprintf(os.Stdout, "  CLI version:    %s\n", cliVersion)
-		_, _ = fmt.Fprintf(os.Stdout, "  Server version: %s\n", serverVersion.Version)
-		_, _ = fmt.Fprint(os.Stdout, "This may cause compatibility issues.\n\n")
+	} else {
+		normalizedCLI := strings.TrimPrefix(cliVersion, "v")
+		normalizedServer := strings.TrimPrefix(serverVersion.Version, "v")
+
+		if normalizedServer != normalizedCLI {
+			_, _ = fmt.Fprint(os.Stdout, "Warning: Version mismatch detected!\n")
+			_, _ = fmt.Fprintf(os.Stdout, "  CLI version:    %s\n", cliVersion)
+			_, _ = fmt.Fprintf(os.Stdout, "  Server version: %s\n", serverVersion.Version)
+			_, _ = fmt.Fprint(os.Stdout, "This may cause compatibility issues.\n\n")
+		}
 	}
 
 	cfg, _ := config.Load()
