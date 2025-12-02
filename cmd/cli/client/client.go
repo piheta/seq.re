@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/piheta/seq.re/cmd/cli/models"
@@ -12,12 +13,16 @@ import (
 
 // Client handles API requests to the seqre server
 type Client struct {
-	BaseURL string
+	BaseURL    string
+	HTTPClient *http.Client
 }
 
 // New creates a new API client
 func New(baseURL string) *Client {
-	return &Client{BaseURL: baseURL}
+	return &Client{
+		BaseURL:    baseURL,
+		HTTPClient: http.DefaultClient,
+	}
 }
 
 // GetIP retrieves the public IP address
@@ -199,4 +204,181 @@ func (c *Client) GetSecret(short string) (string, error) {
 	}
 
 	return secretReq.Data, nil
+}
+
+// CreateImage uploads a raw image file
+//nolint:revive // onetime flag is acceptable for control flow
+func (c *Client) CreateImage(imageData []byte, filename string, onetime bool) (string, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Add file field with actual filename
+	part, err := writer.CreateFormFile("file", filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to create form file: %w", err)
+	}
+
+	if _, err := part.Write(imageData); err != nil {
+		return "", fmt.Errorf("failed to write image data: %w", err)
+	}
+
+	// Add onetime flag if true
+	if onetime {
+		if err := writer.WriteField("onetime", "true"); err != nil {
+			return "", fmt.Errorf("failed to write onetime field: %w", err)
+		}
+	}
+
+	if err := writer.Close(); err != nil {
+		return "", fmt.Errorf("failed to close writer: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", c.BaseURL+"/api/images", body)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusCreated {
+		respBody, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	var imageURL string
+	if err := json.Unmarshal(respBody, &imageURL); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return imageURL, nil
+}
+
+// CreateEncryptedImage uploads an encrypted image blob
+//nolint:revive // onetime flag is acceptable for control flow
+func (c *Client) CreateEncryptedImage(encryptedData []byte, onetime bool) (string, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Add file field
+	part, err := writer.CreateFormFile("file", "encrypted.bin")
+	if err != nil {
+		return "", fmt.Errorf("failed to create form file: %w", err)
+	}
+
+	if _, err := part.Write(encryptedData); err != nil {
+		return "", fmt.Errorf("failed to write encrypted data: %w", err)
+	}
+
+	// Add encrypted flag
+	if err := writer.WriteField("encrypted", "true"); err != nil {
+		return "", fmt.Errorf("failed to write encrypted field: %w", err)
+	}
+
+	// Add onetime flag if true
+	if onetime {
+		if err := writer.WriteField("onetime", "true"); err != nil {
+			return "", fmt.Errorf("failed to write onetime field: %w", err)
+		}
+	}
+
+	if err := writer.Close(); err != nil {
+		return "", fmt.Errorf("failed to close writer: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", c.BaseURL+"/api/images", body)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusCreated {
+		respBody, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	var imageURL string
+	if err := json.Unmarshal(respBody, &imageURL); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return imageURL, nil
+}
+
+// GetImageRaw retrieves a raw (unencrypted) image by short code
+func (c *Client) GetImageRaw(short string) ([]byte, error) {
+	resp, err := http.Get(c.BaseURL + "/i/" + short)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	imageData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	return imageData, nil
+}
+
+// GetImage retrieves an encrypted image by short code (returns base64 encoded data)
+func (c *Client) GetImage(short string) (string, error) {
+	resp, err := http.Get(c.BaseURL + "/i/" + short)
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// For encrypted images, server returns JSON with base64 data
+	var imageResp struct {
+		Data string `json:"data"`
+	}
+	if err := json.Unmarshal(body, &imageResp); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return imageResp.Data, nil
 }

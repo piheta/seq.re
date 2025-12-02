@@ -10,12 +10,7 @@ import (
 
 var DB *badger.DB
 
-func ConnectDB() error {
-	dbPath := Config.DBPath
-	if dbPath == "" {
-		dbPath = "/tmp/badger"
-	}
-
+func ConnectDB(dbPath string) error {
 	opts := badger.DefaultOptions(dbPath)
 	opts = opts.WithLogger(&badgerLogger{logger: slog.Default()})
 

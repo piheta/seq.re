@@ -87,6 +87,44 @@ func main() {
 			err = commands.SecretCreate(apiClient, secretText)
 		}
 
+	case "img":
+		if len(os.Args) < 3 {
+			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre img <file> [--encrypted] [--onetime]\n")
+			_, _ = fmt.Fprint(os.Stdout, "       seqre img get <short> [key]\n")
+			os.Exit(1)
+		}
+		if os.Args[2] == "get" {
+			if len(os.Args) < 4 {
+				_, _ = fmt.Fprint(os.Stdout, "Usage: seqre img get <short> [key]\n")
+				os.Exit(1)
+			}
+			// Optional key for encrypted images
+			keyFragment := ""
+			if len(os.Args) >= 5 {
+				keyFragment = os.Args[4]
+			}
+			err = commands.ImageGet(apiClient, os.Args[3], keyFragment)
+		} else {
+			// Upload image
+			imagePath := os.Args[2]
+			encrypted := false
+			onetime := false
+
+			// Parse flags
+			for i := 3; i < len(os.Args); i++ {
+				switch os.Args[i] {
+				case "--encrypted":
+					encrypted = true
+				case "--onetime":
+					onetime = true
+				default:
+					// Ignore unknown flags
+				}
+			}
+
+			err = commands.ImageUpload(apiClient, imagePath, encrypted, onetime)
+		}
+
 	default:
 		slog.Error("Unknown command", slog.String("command", command))
 		os.Exit(1)
@@ -139,6 +177,8 @@ func printUsage() {
 	_, _ = fmt.Fprint(os.Stdout, "  expand <short>                  Expand a shortened URL\n")
 	_, _ = fmt.Fprint(os.Stdout, "  secret <text>                   Create an encrypted secret\n")
 	_, _ = fmt.Fprint(os.Stdout, "  secret get <short> <key>        Retrieve and decrypt a secret\n")
+	_, _ = fmt.Fprint(os.Stdout, "  img <file> [--encrypted] [--onetime]  Upload an image\n")
+	_, _ = fmt.Fprint(os.Stdout, "  img get <short> [key]                 Download an image\n")
 	_, _ = fmt.Fprint(os.Stdout, "  ip                              Get your IP address\n")
 	_, _ = fmt.Fprint(os.Stdout, "  config set <server>             Set the server URL\n")
 	_, _ = fmt.Fprint(os.Stdout, "  config get                      Get the server URL\n")
