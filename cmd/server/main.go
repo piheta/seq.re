@@ -13,11 +13,18 @@ import (
 	"github.com/piheta/seq.re/config"
 	"github.com/piheta/seq.re/internal/features/address"
 	"github.com/piheta/seq.re/internal/features/link"
+	"github.com/piheta/seq.re/internal/features/seqre"
 	localmw "github.com/piheta/seq.re/internal/middleware"
 	"github.com/piheta/seq.re/internal/shared"
 	"golang.org/x/time/rate"
 
 	_ "github.com/piheta/seq.re/docs"
+)
+
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 func init() {
@@ -39,6 +46,11 @@ func init() {
 
 // @Title Seq.re
 func main() {
+	slog.Info("Starting seq.re server",
+		slog.String("version", version),
+		slog.String("commit", commit),
+		slog.String("date", date))
+
 	mux := http.NewServeMux()
 
 	linkRepo := link.NewLinkRepo(config.DB)
@@ -48,6 +60,7 @@ func main() {
 
 	addressHandler := address.NewAddressHandler(addressService)
 	linkHandler := link.NewLinkHandler(linkService)
+	seqreHandler := seqre.NewSeqreHandler(version, commit, date)
 
 	mux.Handle("GET /api/ip", middleware.Public(addressHandler.GetPublicIP))
 	mux.Handle("POST /api/links", middleware.Public(linkHandler.CreateLink))
@@ -55,6 +68,8 @@ func main() {
 	// Apply rate limiting to redirect endpoint: 2 requests per second with burst of 5
 	rateLimitedRedirect := localmw.RateLimit(rate.Limit(2), 5)(middleware.Public(linkHandler.RedirectByShort))
 	mux.Handle("GET /{short}", rateLimitedRedirect)
+
+	mux.Handle("GET /api/version", middleware.Public(seqreHandler.GetVersion))
 
 	server := &http.Server{
 		Addr:         ":8080",

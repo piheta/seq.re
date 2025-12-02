@@ -9,7 +9,13 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o seqre-server ./cmd/server
+ARG VERSION=dev
+ARG COMMIT=none
+ARG DATE=unknown
+
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}" \
+    -o seqre-server ./cmd/server
 
 FROM scratch
 

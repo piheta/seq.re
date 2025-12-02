@@ -3,6 +3,7 @@ module github.com/piheta/seq.re
 go 1.25.3
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/dgraph-io/badger/v4 v4.8.0
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/joho/godotenv v1.5.1
