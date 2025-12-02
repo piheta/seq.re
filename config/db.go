@@ -17,6 +17,7 @@ func ConnectDB() error {
 	}
 
 	opts := badger.DefaultOptions(dbPath)
+	opts = opts.WithLogger(&badgerLogger{logger: slog.Default()})
 
 	encryptionKey := Config.DBEncryptionKey
 
@@ -62,4 +63,25 @@ func Close() error {
 	}
 
 	return nil
+}
+
+// SLOG Adapter for Badger DB
+type badgerLogger struct {
+	logger *slog.Logger
+}
+
+func (l *badgerLogger) Errorf(format string, args ...any) {
+	l.logger.Error(fmt.Sprintf(format, args...))
+}
+
+func (l *badgerLogger) Warningf(format string, args ...any) {
+	l.logger.Warn(fmt.Sprintf(format, args...))
+}
+
+func (l *badgerLogger) Infof(format string, args ...any) {
+	l.logger.Info(fmt.Sprintf(format, args...))
+}
+
+func (l *badgerLogger) Debugf(format string, args ...any) {
+	l.logger.Debug(fmt.Sprintf(format, args...))
 }
