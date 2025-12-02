@@ -1,8 +1,9 @@
 package link
 
 import (
-	"crypto/rand"
 	"time"
+
+	"github.com/piheta/seq.re/internal/shared"
 )
 
 type LinkService struct {
@@ -15,7 +16,7 @@ func NewLinkService(linkRepo *LinkRepo) *LinkService {
 
 func (s *LinkService) CreateLink(url string) (*Link, error) {
 	link := Link{
-		Short:     s.createShort(),
+		Short:     shared.CreateShort(),
 		URL:       url,
 		CreatedAt: time.Now(),
 		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
@@ -36,14 +37,4 @@ func (s *LinkService) GetLinkByShort(short string) (*Link, error) {
 	}
 
 	return link, nil
-}
-
-func (s *LinkService) createShort() string {
-	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
-	b := make([]byte, 6)
-	rand.Read(b) // nolint
-	for i := range b {
-		b[i] = chars[b[i]%byte(len(chars))]
-	}
-	return string(b)
 }

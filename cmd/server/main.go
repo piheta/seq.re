@@ -13,6 +13,7 @@ import (
 	"github.com/piheta/seq.re/config"
 	"github.com/piheta/seq.re/internal/features/address"
 	"github.com/piheta/seq.re/internal/features/link"
+	"github.com/piheta/seq.re/internal/features/secret"
 	"github.com/piheta/seq.re/internal/features/seqre"
 	localmw "github.com/piheta/seq.re/internal/middleware"
 	"github.com/piheta/seq.re/internal/shared"
@@ -54,12 +55,15 @@ func main() {
 	mux := http.NewServeMux()
 
 	linkRepo := link.NewLinkRepo(config.DB)
+	secretRepo := secret.NewSecretRepo(config.DB)
 
 	addressService := address.NewAddressService()
 	linkService := link.NewLinkService(linkRepo)
+	secretService := secret.NewSecretService(secretRepo)
 
 	addressHandler := address.NewAddressHandler(addressService)
 	linkHandler := link.NewLinkHandler(linkService)
+	secretHandler := secret.NewSecretHandler(secretService)
 	seqreHandler := seqre.NewSeqreHandler(version, commit, date)
 
 	mux.Handle("GET /api/ip", middleware.Public(addressHandler.GetPublicIP))
@@ -67,6 +71,9 @@ func main() {
 
 	mux.Handle("GET /api/links/{short}", middleware.Public(linkHandler.GetLinkByShort))
 	mux.Handle("POST /api/links", middleware.Public(linkHandler.CreateLink))
+
+	mux.Handle("GET /api/secrets/{short}", middleware.Public(secretHandler.GetSecretByShort))
+	mux.Handle("POST /api/secrets", middleware.Public(secretHandler.CreateSecret))
 
 	// Apply rate limiting to redirect endpoint: 2 requests per second with burst of 5
 	rateLimitedRedirect := localmw.RateLimit(rate.Limit(2), 5)(middleware.Public(linkHandler.RedirectByShort))

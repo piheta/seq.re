@@ -1,20 +1,14 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
-	"github.com/atotto/clipboard"
-	"gopkg.in/yaml.v3"
+	"github.com/piheta/seq.re/cmd/cli/client"
+	"github.com/piheta/seq.re/cmd/cli/commands"
+	"github.com/piheta/seq.re/cmd/cli/config"
 )
 
 var (
@@ -23,155 +17,9 @@ var (
 	date    = "unknown"
 )
 
-type IPResponse struct {
-	IP string `json:"ip"`
-}
-
-type LinkRequest struct {
-	URL string `json:"url"`
-}
-
-type LinkResponse struct {
-	URL       string    `json:"url"`
-	ExpiresAt time.Time `json:"expires_at"`
-}
-
-type VersionResponse struct {
-	Version string `json:"version"`
-	Commit  string `json:"commit"`
-	Date    string `json:"date"`
-}
-
-type Config struct {
-	Server            string `yaml:"server"`
-	AutoCopyClipboard bool   `yaml:"auto_copy_clipboard"`
-}
-
-func getIP(serverURL string) (string, error) {
-	resp, err := http.Get(serverURL + "/api/ip")
-	if err != nil {
-		return "", fmt.Errorf("failed to connect to server: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
-	}
-
-	var ipResp IPResponse
-	if err := json.Unmarshal(body, &ipResp); err != nil {
-		return "", fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return ipResp.IP, nil
-}
-
-func getServerVersion(serverURL string) (*VersionResponse, error) {
-	resp, err := http.Get(serverURL + "/api/version")
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to server: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	var versionResp VersionResponse
-	if err := json.Unmarshal(body, &versionResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &versionResp, nil
-}
-
-func getExpandedURL(serverURL, short string) (*LinkResponse, error) {
-	resp, err := http.Get(serverURL + "/api/links/" + short)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to server: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	var linkResp LinkResponse
-	if err := json.Unmarshal(body, &linkResp); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &linkResp, nil
-}
-
-func getShortenedURL(serverURL, url string) (string, error) {
-	linkReq := LinkRequest{URL: url}
-	reqBody, err := json.Marshal(linkReq)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	resp, err := http.Post(serverURL+"/api/links", "application/json", bytes.NewBuffer(reqBody))
-	if err != nil {
-		return "", fmt.Errorf("failed to connect to server: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
-	}
-
-	var shortURL string
-	if err := json.Unmarshal(body, &shortURL); err != nil {
-		return "", fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return shortURL, nil
-}
-
 func main() {
 	if len(os.Args) < 2 {
-		_, _ = fmt.Fprint(os.Stdout, "Usage: seqre <command> [args]\n")
-		_, _ = fmt.Fprint(os.Stdout, "Commands:\n")
-		_, _ = fmt.Fprint(os.Stdout, "  url <URL>                       Create a shortened URL\n")
-		_, _ = fmt.Fprint(os.Stdout, "  expand <short>                  Expand a shortened URL\n")
-		_, _ = fmt.Fprint(os.Stdout, "  ip                              Get your IP address\n")
-		_, _ = fmt.Fprint(os.Stdout, "  config set <server>             Set the server URL\n")
-		_, _ = fmt.Fprint(os.Stdout, "  config get                      Get the server URL\n")
-		_, _ = fmt.Fprint(os.Stdout, "  config clipboard <on|off>       Enable/disable auto-copy to clipboard\n")
-		_, _ = fmt.Fprint(os.Stdout, "  version                         Show version information\n")
+		printUsage()
 		os.Exit(1)
 	}
 
@@ -179,226 +27,121 @@ func main() {
 
 	// Handle version command
 	if command == "version" {
-		_, _ = fmt.Fprintf(os.Stdout, "seqre version %s\n", version)
-		_, _ = fmt.Fprintf(os.Stdout, "commit: %s\n", commit)
-		_, _ = fmt.Fprintf(os.Stdout, "built: %s\n", date)
+		commands.Version(version, commit, date)
 		return
 	}
 
-	// Handle config command specially (doesn't need server connection)
+	// Handle config commands (don't need server connection)
 	if command == "config" {
-		if len(os.Args) < 3 {
-			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre config <set|get|clipboard> [args]\n")
-			os.Exit(1)
-		}
-
-		subcommand := os.Args[2]
-		switch subcommand {
-		case "set":
-			if len(os.Args) < 4 {
-				_, _ = fmt.Fprint(os.Stdout, "Usage: seqre config set <server>\n")
-				os.Exit(1)
-			}
-			serverURL := os.Args[3]
-
-			// Try to check server version
-			serverVersion, err := getServerVersion(serverURL)
-			if err != nil {
-				_, _ = fmt.Fprintf(os.Stdout, "Warning: Could not verify server version: %v\n", err)
-			} else if serverVersion.Version != version {
-				_, _ = fmt.Fprint(os.Stdout, "Warning: Version mismatch detected!\n")
-				_, _ = fmt.Fprintf(os.Stdout, "  CLI version:    %s\n", version)
-				_, _ = fmt.Fprintf(os.Stdout, "  Server version: %s\n", serverVersion.Version)
-				_, _ = fmt.Fprint(os.Stdout, "This may cause compatibility issues.\n\n")
-			}
-
-			cfg, _ := loadConfig()
-			cfg.Server = serverURL
-			err = saveConfigStruct(cfg)
-			if err != nil {
-				slog.Error("Failed to save config", slog.String("error", err.Error()))
-				os.Exit(1)
-			}
-			_, _ = fmt.Fprintf(os.Stdout, "Server URL set to: %s\n", serverURL)
-
-		case "get":
-			cfg, err := loadConfig()
-			if err != nil {
-				slog.Error("Failed to load config", slog.String("error", err.Error()))
-				os.Exit(1)
-			}
-			if cfg.Server == "" {
-				_, _ = fmt.Fprint(os.Stdout, "No server URL configured\n")
-			} else {
-				_, _ = fmt.Fprintf(os.Stdout, "Server URL: %s\n", cfg.Server)
-			}
-			_, _ = fmt.Fprintf(os.Stdout, "Auto-copy clipboard: %v\n", cfg.AutoCopyClipboard)
-
-		case "clipboard":
-			if len(os.Args) < 4 {
-				_, _ = fmt.Fprint(os.Stdout, "Usage: seqre config clipboard <on|off>\n")
-				os.Exit(1)
-			}
-			cfg, _ := loadConfig()
-			switch os.Args[3] {
-			case "on":
-				cfg.AutoCopyClipboard = true
-				_, _ = fmt.Fprint(os.Stdout, "Auto-copy to clipboard enabled\n")
-			case "off":
-				cfg.AutoCopyClipboard = false
-				_, _ = fmt.Fprint(os.Stdout, "Auto-copy to clipboard disabled\n")
-			default:
-				_, _ = fmt.Fprint(os.Stdout, "Invalid option. Use 'on' or 'off'\n")
-				os.Exit(1)
-			}
-			if err := saveConfigStruct(cfg); err != nil {
-				slog.Error("Failed to save config", slog.String("error", err.Error()))
-				os.Exit(1)
-			}
-
-		default:
-			slog.Error("Unknown config subcommand", slog.String("subcommand", subcommand))
+		if err := handleConfigCommand(); err != nil {
+			slog.Error(err.Error())
 			os.Exit(1)
 		}
 		return
 	}
 
-	serverURL := getServerURL()
+	// All other commands need API client
+	serverURL := config.GetServerURL()
+	apiClient := client.New(serverURL)
 
+	var err error
 	switch command {
 	case "url":
 		if len(os.Args) < 3 {
 			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre url <URL>\n")
 			os.Exit(1)
 		}
-		url := normalizeURL(os.Args[2])
-		shortURL, err := getShortenedURL(serverURL, url)
-		if err != nil {
-			slog.Error("Failed to shorten URL", slog.String("error", err.Error()))
-			os.Exit(1)
-		}
-		_, _ = fmt.Fprintln(os.Stdout, shortURL)
-
-		cfg, _ := loadConfig()
-		if cfg.AutoCopyClipboard {
-			if err := clipboard.WriteAll(shortURL); err == nil {
-				_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
-			}
-		}
+		err = commands.URLShorten(apiClient, os.Args[2])
 
 	case "expand":
 		if len(os.Args) < 3 {
 			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre expand <short>\n")
 			os.Exit(1)
 		}
-		short := os.Args[2]
-		linkResp, err := getExpandedURL(serverURL, short)
-		if err != nil {
-			slog.Error("Failed to expand URL", slog.String("error", err.Error()))
-			os.Exit(1)
-		}
-		_, _ = fmt.Fprintf(os.Stdout, "URL: %s\n", linkResp.URL)
-		_, _ = fmt.Fprintf(os.Stdout, "Expires: %s\n", linkResp.ExpiresAt.Format(time.RFC3339))
-
-		cfg, _ := loadConfig()
-		if cfg.AutoCopyClipboard {
-			if err := clipboard.WriteAll(linkResp.URL); err == nil {
-				_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
-			}
-		}
+		err = commands.URLExpand(apiClient, os.Args[2])
 
 	case "ip":
-		ip, err := getIP(serverURL)
-		if err != nil {
-			slog.Error("Failed to get IP", slog.String("error", err.Error()))
+		err = commands.IP(apiClient)
+
+	case "secret":
+		if len(os.Args) < 3 {
+			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre secret <text>\n")
+			_, _ = fmt.Fprint(os.Stdout, "       seqre secret get <short> <key>\n")
 			os.Exit(1)
 		}
-		_, _ = fmt.Fprintln(os.Stdout, ip)
-
-		cfg, _ := loadConfig()
-		if cfg.AutoCopyClipboard {
-			if err := clipboard.WriteAll(ip); err == nil {
-				_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
+		if os.Args[2] == "get" {
+			if len(os.Args) < 5 {
+				_, _ = fmt.Fprint(os.Stdout, "Usage: seqre secret get <short> <key>\n")
+				os.Exit(1)
 			}
+			err = commands.SecretGet(apiClient, os.Args[3], os.Args[4])
+		} else {
+			// Join all args from index 2 onwards to support multi-word secrets
+			secretText := ""
+			for i := 2; i < len(os.Args); i++ {
+				if i > 2 {
+					secretText += " "
+				}
+				secretText += os.Args[i]
+			}
+			err = commands.SecretCreate(apiClient, secretText)
 		}
 
 	default:
 		slog.Error("Unknown command", slog.String("command", command))
 		os.Exit(1)
 	}
-}
 
-func normalizeURL(input string) string {
-	if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
-		return "https://" + input
-	}
-	return input
-}
-
-func getConfigPath() string {
-	home, err := os.UserHomeDir()
 	if err != nil {
-		return ""
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
-	return filepath.Join(home, ".config", "seqre", "config")
 }
 
-func loadConfig() (Config, error) {
-	configPath := getConfigPath()
-	if configPath == "" {
-		return Config{}, nil
+func handleConfigCommand() error {
+	if len(os.Args) < 3 {
+		return errors.New("usage: seqre config <set|get|clipboard> [args]")
 	}
 
-	data, err := os.ReadFile(filepath.Clean(configPath))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return Config{}, nil
+	subcommand := os.Args[2]
+	switch subcommand {
+	case "set":
+		if len(os.Args) < 4 {
+			return errors.New("usage: seqre config set <server>")
 		}
-		return Config{}, fmt.Errorf("failed to read config: %w", err)
-	}
+		return commands.ConfigSet(os.Args[3], version)
 
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return Config{}, fmt.Errorf("failed to parse config: %w", err)
+	case "get":
+		return commands.ConfigGet()
+
+	case "clipboard":
+		if len(os.Args) < 4 {
+			return errors.New("usage: seqre config clipboard <on|off>")
+		}
+		switch os.Args[3] {
+		case "on":
+			return commands.ConfigEnableClipboard()
+		case "off":
+			return commands.ConfigDisableClipboard()
+		default:
+			return fmt.Errorf("invalid option '%s'. Use 'on' or 'off'", os.Args[3])
+		}
+
+	default:
+		return fmt.Errorf("unknown config subcommand: %s", subcommand)
 	}
-	return cfg, nil
 }
 
-func saveConfigStruct(cfg Config) error {
-	configPath := getConfigPath()
-	if configPath == "" {
-		return errors.New("could not determine config path")
-	}
-
-	// Create directory if it doesn't exist
-	configDir := filepath.Dir(configPath)
-	if err := os.MkdirAll(configDir, 0o750); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
-	}
-
-	data, err := yaml.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
-	}
-
-	if err := os.WriteFile(configPath, data, 0o600); err != nil {
-		return fmt.Errorf("failed to write config: %w", err)
-	}
-	return nil
-}
-
-func getServerURL() string {
-	if url := os.Getenv("SEQRE_SERVER"); url != "" {
-		return url
-	}
-
-	cfg, err := loadConfig()
-	if err != nil {
-		slog.Warn("Failed to load config", slog.String("error", err.Error()))
-	}
-	if cfg.Server != "" {
-		return cfg.Server
-	}
-
-	return "http://localhost:8080"
+func printUsage() {
+	_, _ = fmt.Fprint(os.Stdout, "Usage: seqre <command> [args]\n")
+	_, _ = fmt.Fprint(os.Stdout, "Commands:\n")
+	_, _ = fmt.Fprint(os.Stdout, "  url <URL>                       Create a shortened URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  expand <short>                  Expand a shortened URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  secret <text>                   Create an encrypted secret\n")
+	_, _ = fmt.Fprint(os.Stdout, "  secret get <short> <key>        Retrieve and decrypt a secret\n")
+	_, _ = fmt.Fprint(os.Stdout, "  ip                              Get your IP address\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config set <server>             Set the server URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config get                      Get the server URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config clipboard <on|off>       Enable/disable auto-copy to clipboard\n")
+	_, _ = fmt.Fprint(os.Stdout, "  version                         Show version information\n")
 }

@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"crypto/rand"
 	"net"
 	"net/http"
 	"strings"
@@ -32,4 +33,14 @@ func GetIP(r *http.Request) string {
 	// Use RemoteAddr (cannot be spoofed)
 	host, _, _ := net.SplitHostPort(r.RemoteAddr)
 	return host
+}
+
+func CreateShort() string {
+	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+	b := make([]byte, 6)
+	rand.Read(b) // nolint
+	for i := range b {
+		b[i] = chars[b[i]%byte(len(chars))]
+	}
+	return string(b)
 }
