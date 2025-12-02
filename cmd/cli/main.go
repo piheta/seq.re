@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/atotto/clipboard"
 	"gopkg.in/yaml.v3"
@@ -28,6 +29,11 @@ type IPResponse struct {
 
 type LinkRequest struct {
 	URL string `json:"url"`
+}
+
+type LinkResponse struct {
+	URL       string    `json:"url"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 type VersionResponse struct {
@@ -95,6 +101,33 @@ func getServerVersion(serverURL string) (*VersionResponse, error) {
 	return &versionResp, nil
 }
 
+func getExpandedURL(serverURL, short string) (*LinkResponse, error) {
+	resp, err := http.Get(serverURL + "/api/links/" + short)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	var linkResp LinkResponse
+	if err := json.Unmarshal(body, &linkResp); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return &linkResp, nil
+}
+
 func getShortenedURL(serverURL, url string) (string, error) {
 	linkReq := LinkRequest{URL: url}
 	reqBody, err := json.Marshal(linkReq)
@@ -133,6 +166,7 @@ func main() {
 		_, _ = fmt.Fprint(os.Stdout, "Usage: seqre <command> [args]\n")
 		_, _ = fmt.Fprint(os.Stdout, "Commands:\n")
 		_, _ = fmt.Fprint(os.Stdout, "  url <URL>                       Create a shortened URL\n")
+		_, _ = fmt.Fprint(os.Stdout, "  expand <short>                  Expand a shortened URL\n")
 		_, _ = fmt.Fprint(os.Stdout, "  ip                              Get your IP address\n")
 		_, _ = fmt.Fprint(os.Stdout, "  config set <server>             Set the server URL\n")
 		_, _ = fmt.Fprint(os.Stdout, "  config get                      Get the server URL\n")
@@ -248,6 +282,27 @@ func main() {
 		cfg, _ := loadConfig()
 		if cfg.AutoCopyClipboard {
 			if err := clipboard.WriteAll(shortURL); err == nil {
+				_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
+			}
+		}
+
+	case "expand":
+		if len(os.Args) < 3 {
+			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre expand <short>\n")
+			os.Exit(1)
+		}
+		short := os.Args[2]
+		linkResp, err := getExpandedURL(serverURL, short)
+		if err != nil {
+			slog.Error("Failed to expand URL", slog.String("error", err.Error()))
+			os.Exit(1)
+		}
+		_, _ = fmt.Fprintf(os.Stdout, "URL: %s\n", linkResp.URL)
+		_, _ = fmt.Fprintf(os.Stdout, "Expires: %s\n", linkResp.ExpiresAt.Format(time.RFC3339))
+
+		cfg, _ := loadConfig()
+		if cfg.AutoCopyClipboard {
+			if err := clipboard.WriteAll(linkResp.URL); err == nil {
 				_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
 			}
 		}

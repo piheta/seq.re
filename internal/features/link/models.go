@@ -6,6 +6,11 @@ type LinkRequest struct {
 	URL string `json:"url" validate:"required,notprivateip"`
 }
 
+type LinkResponse struct {
+	URL       string    `json:"url"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
 type RedirectRequest struct {
 	Short string
 }

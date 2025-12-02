@@ -72,3 +72,32 @@ func (h *LinkHandler) CreateLink(w http.ResponseWriter, r *http.Request) error {
 
 	return response.JSON(w, 201, shortURL)
 }
+
+// GetLinkByShort retrieves link information by short code.
+// @Summary Get link information
+// @Description Returns the original URL and expiry time associated with the given short code
+// @Tags link
+// @Param short path string true "Short code (6 characters)"
+// @Success 200 {object} LinkResponse "Link information"
+// @Failure 404
+// @Failure 422
+// @Router /api/links/{short} [get]
+func (h *LinkHandler) GetLinkByShort(w http.ResponseWriter, r *http.Request) error {
+	short := r.PathValue("short")
+
+	if len(short) != 6 {
+		return apierr.NewError(422, "validation", "Invalid shorturl code")
+	}
+
+	link, err := h.linkService.GetLinkByShort(short)
+	if err != nil {
+		return apierr.NewError(404, "url", "url not found")
+	}
+
+	linkResp := LinkResponse{
+		link.URL,
+		link.ExpiresAt,
+	}
+
+	return response.JSON(w, 200, linkResp)
+}

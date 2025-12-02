@@ -63,13 +63,14 @@ func main() {
 	seqreHandler := seqre.NewSeqreHandler(version, commit, date)
 
 	mux.Handle("GET /api/ip", middleware.Public(addressHandler.GetPublicIP))
+	mux.Handle("GET /api/version", middleware.Public(seqreHandler.GetVersion))
+
+	mux.Handle("GET /api/links/{short}", middleware.Public(linkHandler.GetLinkByShort))
 	mux.Handle("POST /api/links", middleware.Public(linkHandler.CreateLink))
 
 	// Apply rate limiting to redirect endpoint: 2 requests per second with burst of 5
 	rateLimitedRedirect := localmw.RateLimit(rate.Limit(2), 5)(middleware.Public(linkHandler.RedirectByShort))
 	mux.Handle("GET /{short}", rateLimitedRedirect)
-
-	mux.Handle("GET /api/version", middleware.Public(seqreHandler.GetVersion))
 
 	server := &http.Server{
 		Addr:         ":8080",
