@@ -80,5 +80,5 @@ func GetServerURL() string {
 		return cfg.Server
 	}
 
-	return "http://localhost:8080"
+	return "https://seq.re"
 }
