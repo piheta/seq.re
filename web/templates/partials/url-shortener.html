@@ -1,0 +1,146 @@
+<div class="space-y-4">
+    <div class="flex items-center gap-2 mb-4">
+        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+        <h2 class="text-gray-900">URL Shortener</h2>
+    </div>
+
+    <form id="url-form" onsubmit="submitURL(event)">
+        <input
+            id="url-input"
+            type="url"
+            name="url"
+            placeholder="Enter your long URL"
+            required
+            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <!-- Options -->
+        <div class="space-y-2 mt-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                    type="radio"
+                    name="mode"
+                    value="public"
+                    checked
+                    class="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="text-gray-700">Public</span>
+            </label>
+
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                    type="radio"
+                    name="mode"
+                    value="encrypted"
+                    class="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="text-gray-700">Encrypted</span>
+            </label>
+
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                    id="onetime-checkbox"
+                    type="checkbox"
+                    name="self_destruct"
+                    value="true"
+                    class="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
+                />
+                <span class="text-gray-700">One-time</span>
+            </label>
+        </div>
+
+        <button
+            type="submit"
+            class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors mt-3"
+        >
+            Shorten URL
+        </button>
+    </form>
+
+    <div id="url-result"></div>
+</div>
+
+<script>
+async function submitURL(event) {
+    event.preventDefault();
+
+    const urlInput = document.getElementById('url-input');
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    const onetime = document.getElementById('onetime-checkbox').checked;
+    const resultDiv = document.getElementById('url-result');
+
+    let url = urlInput.value;
+    const encrypted = mode === 'encrypted';
+
+    try {
+        let shortURL;
+
+        if (encrypted) {
+            // Generate encryption key
+            const key = await generateKey();
+
+            // Encrypt the URL
+            const encryptedURL = await encrypt(url, key);
+
+            // Send encrypted URL to API
+            const response = await fetch('/api/links', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: encryptedURL,
+                    encrypted: true,
+                    onetime: onetime
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to shorten URL');
+            }
+
+            shortURL = await response.json();
+
+            // Append key fragment to URL
+            const keyFragment = await exportKey(key);
+            shortURL = shortURL + '#' + keyFragment;
+        } else {
+            // Send plain URL to API
+            const response = await fetch('/api/links', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: url,
+                    encrypted: false,
+                    onetime: onetime
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to shorten URL');
+            }
+
+            shortURL = await response.json();
+        }
+
+        // Display result
+        resultDiv.innerHTML = `
+            <div class="flex gap-2 items-center mt-4">
+                <input
+                    type="text"
+                    value="${shortURL}"
+                    readonly
+                    class="flex-1 px-4 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-700"
+                />
+                <button
+                    onclick="copyToClipboard('${shortURL}', 'copy-btn-url')"
+                    id="copy-btn-url"
+                    class="p-2 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </button>
+            </div>
+        `;
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="text-red-600 mt-4">Error: ${error.message}</div>`;
+    }
+}
+</script>

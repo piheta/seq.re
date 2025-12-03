@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>seq.re</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/static/crypto.js"></script>
+</head>
+<body class="min-h-screen bg-gray-50 py-8 px-4">
+    <div class="max-w-2xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-gray-900 text-4xl">seq.re</h1>
+        </header>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6 p-2">
+            <div class="flex flex-wrap gap-2">
+                <button 
+                    hx-get="/tab/url" 
+                    hx-target="#tab-content" 
+                    hx-swap="innerHTML"
+                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md transition-colors bg-gray-100 text-gray-900"
+                    onclick="setActiveTab(this)">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                    <span class="hidden sm:inline">URL Shortener</span>
+                </button>
+                <button 
+                    hx-get="/tab/image" 
+                    hx-target="#tab-content" 
+                    hx-swap="innerHTML"
+                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-gray-600 hover:bg-gray-50"
+                    onclick="setActiveTab(this)">
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span class="hidden sm:inline">Image Sharing</span>
+                </button>
+                <button 
+                    hx-get="/tab/secret" 
+                    hx-target="#tab-content" 
+                    hx-swap="innerHTML"
+                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-gray-600 hover:bg-gray-50"
+                    onclick="setActiveTab(this)">
+                    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <span class="hidden sm:inline">Secret Sharing</span>
+                </button>
+                <button 
+                    hx-get="/tab/code" 
+                    hx-target="#tab-content" 
+                    hx-swap="innerHTML"
+                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-gray-600 hover:bg-gray-50"
+                    onclick="setActiveTab(this)">
+                    <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    <span class="hidden sm:inline">Code Sharing</span>
+                </button>
+                <button 
+                    hx-get="/tab/ip" 
+                    hx-target="#tab-content" 
+                    hx-swap="innerHTML"
+                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md transition-colors text-gray-600 hover:bg-gray-50"
+                    onclick="setActiveTab(this)">
+                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="hidden sm:inline">IP Detection</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="bg-white rounded-lg shadow-sm p-6" id="tab-content" hx-get="/tab/url" hx-trigger="load" hx-swap="innerHTML">
+            <!-- Content will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        function setActiveTab(button) {
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-gray-100', 'text-gray-900');
+                btn.classList.add('text-gray-600', 'hover:bg-gray-50');
+            });
+            button.classList.add('bg-gray-100', 'text-gray-900');
+            button.classList.remove('text-gray-600', 'hover:bg-gray-50');
+        }
+
+        function copyToClipboard(text, buttonId) {
+            navigator.clipboard.writeText(text);
+            const button = document.getElementById(buttonId);
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

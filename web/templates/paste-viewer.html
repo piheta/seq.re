@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Paste...</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            background: #0d1117;
+            color: #c9d1d9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #161b22;
+            border-radius: 8px;
+        }
+
+        .spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh;
+        }
+
+        .spinner {
+            border: 3px solid #30363d;
+            border-top: 3px solid #58a6ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #f85149;
+            text-align: center;
+        }
+
+        #paste-display {
+            display: none;
+        }
+
+        pre {
+            margin: 0;
+            padding: 0;
+            background: #0d1117;
+        }
+
+        code {
+            display: block;
+            padding: 16px;
+            border-radius: 8px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .copy-button {
+            padding: 8px 16px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .copy-button:hover {
+            background: #2ea043;
+        }
+
+        .copy-button:active {
+            background: #26a148;
+        }
+
+        .language-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #1f6feb;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .plain-text {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <div id="message">Decrypting paste...</div>
+        </div>
+
+        <div id="paste-display">
+            <div class="header">
+                <div>
+                    <span id="language-badge" class="language-badge" style="display: none;"></span>
+                </div>
+                <button class="copy-button" onclick="copyPaste()">Copy</button>
+            </div>
+            <pre><code id="code-display"></code></pre>
+        </div>
+    </div>
+
+    <script>
+        // Inline crypto functions for faster loading
+        async function importKey(base64url) {
+            const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+            const padding = '='.repeat((4 - base64.length % 4) % 4);
+            const raw = Uint8Array.from(atob(base64 + padding), c => c.charCodeAt(0));
+            return await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, true, ["decrypt"]);
+        }
+
+        async function decrypt(base64Data, key) {
+            const combined = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+            const iv = combined.slice(0, 12);
+            const ciphertext = combined.slice(12);
+            const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, ciphertext);
+            return new TextDecoder().decode(decrypted);
+        }
+
+        let decryptedContent = '';
+
+        function copyPaste() {
+            navigator.clipboard.writeText(decryptedContent).then(() => {
+                const button = document.querySelector('.copy-button');
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Encrypted paste data embedded in page
+        const encryptedData = "{{.Data}}";
+        const language = "{{.Language}}";
+        const hash = location.hash.slice(1);
+
+        // Start decryption immediately
+        if (!hash) {
+            document.getElementById('message').textContent = 'Error: Encryption key not found in URL';
+            document.getElementById('message').className = 'error';
+            document.querySelector('.spinner').style.display = 'none';
+        } else {
+            importKey(hash)
+                .then(key => decrypt(encryptedData, key))
+                .then(content => {
+                    decryptedContent = content;
+
+                    // Display paste
+                    const codeElement = document.getElementById('code-display');
+                    codeElement.textContent = content;
+
+                    // Apply syntax highlighting if language is specified
+                    if (language && language !== '') {
+                        const languageBadge = document.getElementById('language-badge');
+                        languageBadge.textContent = language;
+                        languageBadge.style.display = 'inline-block';
+
+                        codeElement.className = 'language-' + language;
+                        hljs.highlightElement(codeElement);
+                    } else {
+                        codeElement.className = 'plain-text';
+                    }
+
+                    // Show paste, hide spinner
+                    document.getElementById('paste-display').style.display = 'block';
+                    document.querySelector('.spinner-container').style.display = 'none';
+                    document.title = 'Paste';
+                })
+                .catch(err => {
+                    document.getElementById('message').textContent = 'Error: ' + err.message;
+                    document.getElementById('message').className = 'error';
+                    document.querySelector('.spinner').style.display = 'none';
+                });
+        }
+    </script>
+</body>
+
+</html>

@@ -17,6 +17,7 @@ import (
 	"github.com/piheta/seq.re/internal/features/paste"
 	"github.com/piheta/seq.re/internal/features/secret"
 	"github.com/piheta/seq.re/internal/features/seqre"
+	"github.com/piheta/seq.re/internal/features/web"
 	localmw "github.com/piheta/seq.re/internal/middleware"
 	"github.com/piheta/seq.re/internal/shared"
 	"golang.org/x/time/rate"
@@ -70,7 +71,22 @@ func main() {
 	imageHandler := img.NewImageHandler(imageService)
 	pasteHandler := paste.NewPasteHandler(pasteService)
 	seqreHandler := seqre.NewSeqreHandler(version, commit, date)
+	webHandler := web.NewWebHandler()
 
+	// Static files
+	fs := http.FileServer(http.Dir("web/static"))
+	mux.Handle("GET /static/", http.StripPrefix("/static/", fs))
+
+	// Web UI routes
+	mux.Handle("GET /", middleware.Public(webHandler.ServeIndex))
+	mux.Handle("GET /tab/url", middleware.Public(webHandler.ServeURLTab))
+	mux.Handle("GET /tab/image", middleware.Public(webHandler.ServeImageTab))
+	mux.Handle("GET /tab/secret", middleware.Public(webHandler.ServeSecretTab))
+	mux.Handle("GET /tab/code", middleware.Public(webHandler.ServeCodeTab))
+	mux.Handle("GET /tab/ip", middleware.Public(webHandler.ServeIPTab))
+	mux.Handle("GET /web/detect-ip", middleware.Public(webHandler.DetectIP))
+
+	// API routes
 	mux.Handle("GET /api/ip", middleware.Public(ipHandler.GetPublicIP))
 	mux.Handle("GET /api/version", middleware.Public(seqreHandler.GetVersion))
 
@@ -87,6 +103,7 @@ func main() {
 	mux.Handle("GET /p/{short}", middleware.Public(pasteHandler.GetPasteByShort))
 
 	// Apply rate limiting to redirect endpoint: 2 requests per second with burst of 5
+	// This must be last to not conflict with other routes
 	rateLimitedRedirect := localmw.RateLimit(rate.Limit(2), 5)(middleware.Public(linkHandler.RedirectByShort))
 	mux.Handle("GET /{short}", rateLimitedRedirect)
 
