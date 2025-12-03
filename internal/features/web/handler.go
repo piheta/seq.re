@@ -22,39 +22,31 @@ func NewWebHandler() *WebHandler {
 	}
 }
 
-// ServeIndex serves the main page
 func (h *WebHandler) ServeIndex(w http.ResponseWriter, _ *http.Request) error {
 	return h.templates.ExecuteTemplate(w, "index.html", nil)
 }
 
-// ServeURLTab serves the URL shortener tab
 func (h *WebHandler) ServeURLTab(w http.ResponseWriter, _ *http.Request) error {
 	return h.templates.ExecuteTemplate(w, "url-shortener.html", nil)
 }
 
-// ServeImageTab serves the image sharing tab
 func (h *WebHandler) ServeImageTab(w http.ResponseWriter, _ *http.Request) error {
 	return h.templates.ExecuteTemplate(w, "image-sharing.html", nil)
 }
 
-// ServeSecretTab serves the secret sharing tab
 func (h *WebHandler) ServeSecretTab(w http.ResponseWriter, _ *http.Request) error {
 	return h.templates.ExecuteTemplate(w, "secret-sharing.html", nil)
 }
 
-// ServeCodeTab serves the code sharing tab
 func (h *WebHandler) ServeCodeTab(w http.ResponseWriter, _ *http.Request) error {
 	return h.templates.ExecuteTemplate(w, "code-sharing.html", nil)
 }
 
-// ServeIPTab serves the IP detection tab
 func (h *WebHandler) ServeIPTab(w http.ResponseWriter, _ *http.Request) error {
 	return h.templates.ExecuteTemplate(w, "ip-detection.html", nil)
 }
 
-// DetectIP returns the user's IP address as HTML
 func (h *WebHandler) DetectIP(w http.ResponseWriter, _ *http.Request) error {
-	// Call the internal API
 	resp, err := h.apiClient.Get("http://localhost:8080/api/ip")
 	if err != nil {
 		return err
@@ -75,7 +67,6 @@ func (h *WebHandler) DetectIP(w http.ResponseWriter, _ *http.Request) error {
 		return err
 	}
 
-	// Render IP result template
 	return h.templates.ExecuteTemplate(w, "ip-result.html", map[string]string{
 		"IPAddress": ipResp.IP,
 	})
