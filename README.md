@@ -5,15 +5,19 @@
 [![Go Lint](https://github.com/piheta/seq.re/actions/workflows/lint.yml/badge.svg)](https://github.com/piheta//actions/workflows/lint.yml)
 [![CodeQL](https://github.com/piheta/seq.re/actions/workflows/codeql.yml/badge.svg)](https://github.com/piheta/seq.re/security/code-scanning)
 
-A self-hostable collection of everyday utilities — URL shortening, IP lookup, and secret sharing — without the ads, telemetry, or third-party dependencies.
+A self-hostable collection of everyday utilities — URL shortening, IP lookup, secret, image and code sharing — without the ads, telemetry, or third-party dependencies.
 
 ## Features
 
 - **URL Shortening** - Create short, unique 6-character codes for long URLs with automatic 7-day expiration
-- **IP Detection** - Extract client IP addresses with support for proxied requests (X-Forwarded-For, X-Real-IP)
-- **Ephemeral Secret Sharing** - Create one time use links for secret sharing
-- **Encrypted Badger Database** - Embedded key-value store with automatic TTL-based link expiration
-- **CLI Tool** - Command line tool for interacting with the api.
+- **Secret Sharing** - Create one-time use encrypted links for sensitive text
+- **Image Sharing** - Upload and share images with optional encryption and one-time viewing
+- **Code Sharing** - Share code snippets with syntax highlighting support and optional encryption
+- **IP Detection** - Lookup your IP with support for proxied requests (X-Forwarded-For, X-Real-IP)
+- **End-to-End Encryption** - Optional client-side encryption for URLs, images, and pastes (key never touches server)
+- **One-Time Resources** - Auto-delete links, images, secrets, or pastes after first access
+- **Encrypted KV Database** - Embedded key-value store with automatic TTL-based expiration
+- **CLI Tool** - Full-featured command line interface with clipboard integration
 
 ## Server Deployment
 
@@ -39,7 +43,7 @@ docker run -p 8080:8080 \
 | `REDIRECT_HOST` | `http://localhost` | Base URL for shortened links |
 | `REDIRECT_PORT` | `:8080` | Port suffix for URLs (use `:443` or empty for standard ports) |
 | `BEHIND_PROXY` | `false` | Set to `true` when behind Cloudflare/Nginx to trust proxy headers |
-| `DB_PATH` | `/data/badger` | Database storage path | Optional: Override the default db path
+| `DATA_PATH` | `/data/seqre` | Database storage path | Optional: Override the default db path
 | `DB_ENCRYPTION_KEY` | - | Optional: 32/48/64 hex chars for AES-128/192/256 encryption |
 
 **Important:** Store the encryption key securely! Without it, your database cannot be decrypted.
@@ -60,12 +64,20 @@ Or download binaries [here](https://github.com/piheta/seq.re/releases)
 ```bash
 Usage: seqre <command> [args]
 Commands:
-  url <URL>              Create a shortened URL
-  ip                     Get your IP address
-  config set <server>    Set the server URL
-  config get             Get the server URL
+  ip                                                              Get your IP address
+  url <URL> [--encrypted] [--onetime]                             Create a shortened URL
+  url get <short> [key]                                           Expand a shortened URL
+  secret <text>                                                   Create an encrypted secret
+  secret get <short> <key>                                        Retrieve and decrypt a secret
+  img <file> [--encrypted] [--onetime]                            Upload an image
+  img get <short> [key]                                           Download an image
+  paste <file> [--language <lang>] [--encrypted] [--onetime]      Upload a paste
+  paste get <url|short> [key]                                     Retrieve a paste
+  config set <server>                                             Set the server URL
+  config get                                                      Get the server URL
+  config clipboard <on|off>                                       Enable/disable auto-copy to clipboard
+  version                                                         Show version information
 ```
 
 ## Roadmap
-- Secret sharing
-- Fragments for private short urls
+- Web UI
