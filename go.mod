@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lmittmann/tint v1.1.2
-	github.com/piheta/apicore v0.3.0
+	github.com/piheta/apicore v0.4.0
 	github.com/swaggo/swag v1.16.3
 	golang.org/x/time v0.14.0
 	gopkg.in/yaml.v3 v3.0.1

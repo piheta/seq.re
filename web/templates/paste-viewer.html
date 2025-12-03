@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading Paste...</title>
+    <script src="/static/crypto.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
@@ -141,22 +142,6 @@
     </div>
 
     <script>
-        // Inline crypto functions for faster loading
-        async function importKey(base64url) {
-            const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
-            const padding = '='.repeat((4 - base64.length % 4) % 4);
-            const raw = Uint8Array.from(atob(base64 + padding), c => c.charCodeAt(0));
-            return await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, true, ["decrypt"]);
-        }
-
-        async function decrypt(base64Data, key) {
-            const combined = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-            const iv = combined.slice(0, 12);
-            const ciphertext = combined.slice(12);
-            const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, ciphertext);
-            return new TextDecoder().decode(decrypted);
-        }
-
         let decryptedContent = '';
 
         function copyPaste() {
@@ -208,7 +193,8 @@
                     document.title = 'Paste';
                 })
                 .catch(err => {
-                    document.getElementById('message').textContent = 'Error: ' + err.message;
+                    console.error('Decryption error:', err);
+                    document.getElementById('message').textContent = 'Failed to decrypt paste. The link may be invalid or expired.';
                     document.getElementById('message').className = 'error';
                     document.querySelector('.spinner').style.display = 'none';
                 });

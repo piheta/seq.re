@@ -18,7 +18,7 @@ type PasteResponse struct {
 
 type CreatePasteRequest struct {
 	Content   string `json:"content" validate:"required,max=1048576"` // 1MB max
-	Language  string `json:"language,omitempty" validate:"omitempty,max=50"`
+	Language  string `json:"language,omitempty" validate:"omitempty,oneof='' javascript python go java rust cpp c csharp typescript php ruby swift kotlin html css sql bash json yaml markdown"`
 	Encrypted bool   `json:"encrypted"`
 	OneTime   bool   `json:"onetime"`
 }

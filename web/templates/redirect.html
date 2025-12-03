@@ -82,9 +82,24 @@
         } else {
             importKey(hash)
                 .then(key => decrypt(encryptedURL, key))
-                .then(url => location.href = url)
+                .then(url => {
+                    // Validate URL protocol to prevent open redirect attacks
+                    try {
+                        const parsed = new URL(url);
+                        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                            location.href = url;
+                        } else {
+                            throw new Error('Invalid URL protocol');
+                        }
+                    } catch (e) {
+                        document.getElementById('message').textContent = 'Error: Invalid URL';
+                        document.getElementById('message').className = 'error';
+                        document.querySelector('.spinner').style.display = 'none';
+                    }
+                })
                 .catch(err => {
-                    document.getElementById('message').textContent = 'Error: ' + err.message;
+                    console.error('Decryption error:', err);
+                    document.getElementById('message').textContent = 'Failed to decrypt URL. The link may be invalid or expired.';
                     document.getElementById('message').className = 'error';
                     document.querySelector('.spinner').style.display = 'none';
                 });

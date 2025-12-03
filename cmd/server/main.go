@@ -109,7 +109,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:         ":8080",
-		Handler:      middleware.RequestLogger(mux),
+		Handler:      middleware.SecurityHeaders(middleware.RequestLogger(mux)),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
