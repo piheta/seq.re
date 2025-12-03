@@ -41,3 +41,16 @@ type Config struct {
 	Server            string `yaml:"server"`
 	AutoCopyClipboard bool   `yaml:"auto_copy_clipboard"`
 }
+
+// PasteRequest represents a request to create a paste
+type PasteRequest struct {
+	Content   string `json:"content"`
+	Language  string `json:"language,omitempty"`
+	Encrypted bool   `json:"encrypted"`
+	OneTime   bool   `json:"onetime"`
+}
+
+// PasteResponse represents the response from getting a paste
+type PasteResponse struct {
+	Data string `json:"data"`
+}

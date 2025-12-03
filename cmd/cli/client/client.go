@@ -382,3 +382,94 @@ func (c *Client) GetImage(short string) (string, error) {
 
 	return imageResp.Data, nil
 }
+
+// CreatePaste creates a new text paste
+func (c *Client) CreatePaste(content string, language string, encrypted bool, onetime bool) (string, error) {
+	pasteReq := models.PasteRequest{
+		Content:   content,
+		Language:  language,
+		Encrypted: encrypted,
+		OneTime:   onetime,
+	}
+	reqBody, err := json.Marshal(pasteReq)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	resp, err := http.Post(c.BaseURL+"/api/pastes", "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	var pasteURL string
+	if err := json.Unmarshal(body, &pasteURL); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return pasteURL, nil
+}
+
+// GetPasteRaw retrieves a raw (unencrypted) paste by short code
+func (c *Client) GetPasteRaw(short string) (string, error) {
+	resp, err := http.Get(c.BaseURL + "/p/" + short)
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	pasteData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	return string(pasteData), nil
+}
+
+// GetPaste retrieves an encrypted paste by short code (returns base64 encoded data)
+func (c *Client) GetPaste(short string) (string, error) {
+	resp, err := http.Get(c.BaseURL + "/p/" + short)
+	if err != nil {
+		return "", fmt.Errorf("failed to connect to server: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// For encrypted pastes, server returns JSON with base64 data
+	var pasteResp models.PasteResponse
+	if err := json.Unmarshal(body, &pasteResp); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return pasteResp.Data, nil
+}

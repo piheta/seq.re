@@ -14,6 +14,7 @@ import (
 	"github.com/piheta/seq.re/internal/features/img"
 	"github.com/piheta/seq.re/internal/features/ip"
 	"github.com/piheta/seq.re/internal/features/link"
+	"github.com/piheta/seq.re/internal/features/paste"
 	"github.com/piheta/seq.re/internal/features/secret"
 	"github.com/piheta/seq.re/internal/features/seqre"
 	localmw "github.com/piheta/seq.re/internal/middleware"
@@ -55,16 +56,19 @@ func main() {
 	linkRepo := link.NewLinkRepo(config.DB)
 	secretRepo := secret.NewSecretRepo(config.DB)
 	imageRepo := img.NewImageRepo(config.DB)
+	pasteRepo := paste.NewPasteRepo(config.DB)
 
 	ipService := ip.NewIPService()
 	linkService := link.NewLinkService(linkRepo)
 	secretService := secret.NewSecretService(secretRepo)
 	imageService := img.NewImageService(imageRepo, config.GetDataPath()+"/imgs")
+	pasteService := paste.NewPasteService(pasteRepo)
 
 	ipHandler := ip.NewIPHandler(ipService)
 	linkHandler := link.NewLinkHandler(linkService)
 	secretHandler := secret.NewSecretHandler(secretService)
 	imageHandler := img.NewImageHandler(imageService)
+	pasteHandler := paste.NewPasteHandler(pasteService)
 	seqreHandler := seqre.NewSeqreHandler(version, commit, date)
 
 	mux.Handle("GET /api/ip", middleware.Public(ipHandler.GetPublicIP))
@@ -78,6 +82,9 @@ func main() {
 
 	mux.Handle("POST /api/images", middleware.Public(imageHandler.CreateImage))
 	mux.Handle("GET /i/{short}", middleware.Public(imageHandler.GetImageByShort))
+
+	mux.Handle("POST /api/pastes", middleware.Public(pasteHandler.CreatePaste))
+	mux.Handle("GET /p/{short}", middleware.Public(pasteHandler.GetPasteByShort))
 
 	// Apply rate limiting to redirect endpoint: 2 requests per second with burst of 5
 	rateLimitedRedirect := localmw.RateLimit(rate.Limit(2), 5)(middleware.Public(linkHandler.RedirectByShort))

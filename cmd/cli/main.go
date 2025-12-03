@@ -125,6 +125,50 @@ func main() {
 			err = commands.ImageUpload(apiClient, imagePath, encrypted, onetime)
 		}
 
+	case "paste":
+		if len(os.Args) < 3 {
+			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre paste <file> [--language <lang>] [--encrypted] [--onetime]\n")
+			_, _ = fmt.Fprint(os.Stdout, "       seqre paste get <url|short> [key]\n")
+			os.Exit(1)
+		}
+		if os.Args[2] == "get" {
+			if len(os.Args) < 4 {
+				_, _ = fmt.Fprint(os.Stdout, "Usage: seqre paste get <url|short> [key]\n")
+				os.Exit(1)
+			}
+			// Optional key for encrypted pastes
+			keyFragment := ""
+			if len(os.Args) >= 5 {
+				keyFragment = os.Args[4]
+			}
+			err = commands.PasteGet(apiClient, os.Args[3], keyFragment)
+		} else {
+			// Upload paste
+			filePath := os.Args[2]
+			language := ""
+			encrypted := false
+			onetime := false
+
+			// Parse flags
+			for i := 3; i < len(os.Args); i++ {
+				switch os.Args[i] {
+				case "--language":
+					if i+1 < len(os.Args) {
+						language = os.Args[i+1]
+						i++
+					}
+				case "--encrypted":
+					encrypted = true
+				case "--onetime":
+					onetime = true
+				default:
+					// Ignore unknown flags
+				}
+			}
+
+			err = commands.PasteCreate(apiClient, filePath, language, encrypted, onetime)
+		}
+
 	default:
 		slog.Error("Unknown command", slog.String("command", command))
 		os.Exit(1)
@@ -173,15 +217,17 @@ func handleConfigCommand() error {
 func printUsage() {
 	_, _ = fmt.Fprint(os.Stdout, "Usage: seqre <command> [args]\n")
 	_, _ = fmt.Fprint(os.Stdout, "Commands:\n")
-	_, _ = fmt.Fprint(os.Stdout, "  url <URL>                       Create a shortened URL\n")
-	_, _ = fmt.Fprint(os.Stdout, "  expand <short>                  Expand a shortened URL\n")
-	_, _ = fmt.Fprint(os.Stdout, "  secret <text>                   Create an encrypted secret\n")
-	_, _ = fmt.Fprint(os.Stdout, "  secret get <short> <key>        Retrieve and decrypt a secret\n")
-	_, _ = fmt.Fprint(os.Stdout, "  img <file> [--encrypted] [--onetime]  Upload an image\n")
-	_, _ = fmt.Fprint(os.Stdout, "  img get <short> [key]                 Download an image\n")
-	_, _ = fmt.Fprint(os.Stdout, "  ip                              Get your IP address\n")
-	_, _ = fmt.Fprint(os.Stdout, "  config set <server>             Set the server URL\n")
-	_, _ = fmt.Fprint(os.Stdout, "  config get                      Get the server URL\n")
-	_, _ = fmt.Fprint(os.Stdout, "  config clipboard <on|off>       Enable/disable auto-copy to clipboard\n")
-	_, _ = fmt.Fprint(os.Stdout, "  version                         Show version information\n")
+	_, _ = fmt.Fprint(os.Stdout, "  url <URL>                                    Create a shortened URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  expand <short>                               Expand a shortened URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  secret <text>                                Create an encrypted secret\n")
+	_, _ = fmt.Fprint(os.Stdout, "  secret get <short> <key>                     Retrieve and decrypt a secret\n")
+	_, _ = fmt.Fprint(os.Stdout, "  img <file> [--encrypted] [--onetime]         Upload an image\n")
+	_, _ = fmt.Fprint(os.Stdout, "  img get <short> [key]                        Download an image\n")
+	_, _ = fmt.Fprint(os.Stdout, "  paste <file> [--language <lang>] [--encrypted] [--onetime]  Upload a paste\n")
+	_, _ = fmt.Fprint(os.Stdout, "  paste get <url|short> [key]                  Retrieve a paste\n")
+	_, _ = fmt.Fprint(os.Stdout, "  ip                                           Get your IP address\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config set <server>                          Set the server URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config get                                   Get the server URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config clipboard <on|off>                    Enable/disable auto-copy to clipboard\n")
+	_, _ = fmt.Fprint(os.Stdout, "  version                                      Show version information\n")
 }
