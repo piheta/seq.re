@@ -11,8 +11,8 @@ import (
 
 	"github.com/piheta/apicore/middleware"
 	"github.com/piheta/seq.re/config"
-	"github.com/piheta/seq.re/internal/features/address"
 	"github.com/piheta/seq.re/internal/features/img"
+	"github.com/piheta/seq.re/internal/features/ip"
 	"github.com/piheta/seq.re/internal/features/link"
 	"github.com/piheta/seq.re/internal/features/secret"
 	"github.com/piheta/seq.re/internal/features/seqre"
@@ -48,10 +48,7 @@ func init() {
 
 // @Title Seq.re
 func main() {
-	slog.Info("Starting seq.re server",
-		slog.String("version", version),
-		slog.String("commit", commit),
-		slog.String("date", date))
+	slog.With("version", version).With("commit", commit).With("date", date).Info("Starting seq.re server")
 
 	mux := http.NewServeMux()
 
@@ -59,18 +56,18 @@ func main() {
 	secretRepo := secret.NewSecretRepo(config.DB)
 	imageRepo := img.NewImageRepo(config.DB)
 
-	addressService := address.NewAddressService()
+	ipService := ip.NewIPService()
 	linkService := link.NewLinkService(linkRepo)
 	secretService := secret.NewSecretService(secretRepo)
 	imageService := img.NewImageService(imageRepo, config.GetDataPath()+"/imgs")
 
-	addressHandler := address.NewAddressHandler(addressService)
+	ipHandler := ip.NewIPHandler(ipService)
 	linkHandler := link.NewLinkHandler(linkService)
 	secretHandler := secret.NewSecretHandler(secretService)
 	imageHandler := img.NewImageHandler(imageService)
 	seqreHandler := seqre.NewSeqreHandler(version, commit, date)
 
-	mux.Handle("GET /api/ip", middleware.Public(addressHandler.GetPublicIP))
+	mux.Handle("GET /api/ip", middleware.Public(ipHandler.GetPublicIP))
 	mux.Handle("GET /api/version", middleware.Public(seqreHandler.GetVersion))
 
 	mux.Handle("GET /api/links/{short}", middleware.Public(linkHandler.GetLinkByShort))

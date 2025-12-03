@@ -35,14 +35,16 @@ func SecretCreate(apiClient *client.Client, secret string) error {
 
 	// Append key fragment to server URL
 	fullURL := fmt.Sprintf("%s#%s", secretURL, keyFragment)
-	_, _ = fmt.Fprintln(os.Stdout, fullURL)
+	_, _ = fmt.Fprint(os.Stdout, fullURL)
 
 	cfg, _ := config.Load()
 	if cfg.AutoCopyClipboard {
 		if err := clipboard.WriteAll(fullURL); err == nil {
-			_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
+			_, _ = fmt.Fprint(os.Stdout, "     \033[90m\033[2m ✓ copied\033[0m")
 		}
 	}
+
+	_, _ = fmt.Fprintln(os.Stdout)
 
 	return nil
 }
@@ -67,14 +69,16 @@ func SecretGet(apiClient *client.Client, short string, keyFragment string) error
 		return fmt.Errorf("failed to decrypt secret: %w", err)
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, string(plaintext))
+	_, _ = fmt.Fprint(os.Stdout, string(plaintext))
 
 	cfg, _ := config.Load()
 	if cfg.AutoCopyClipboard {
 		if err := clipboard.WriteAll(string(plaintext)); err == nil {
-			_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
+			_, _ = fmt.Fprint(os.Stdout, "     \033[90m\033[2m ✓ copied\033[0m")
 		}
 	}
+
+	_, _ = fmt.Fprintln(os.Stdout)
 
 	return nil
 }

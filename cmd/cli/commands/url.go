@@ -18,14 +18,16 @@ func URLShorten(apiClient *client.Client, url string) error {
 	if err != nil {
 		return fmt.Errorf("failed to shorten URL: %w", err)
 	}
-	_, _ = fmt.Fprintln(os.Stdout, shortURL)
+	_, _ = fmt.Fprint(os.Stdout, shortURL)
 
 	cfg, _ := config.Load()
 	if cfg.AutoCopyClipboard {
 		if err := clipboard.WriteAll(shortURL); err == nil {
-			_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
+			_, _ = fmt.Fprint(os.Stdout, "     \033[90m\033[2m ✓ copied\033[0m")
 		}
 	}
+
+	_, _ = fmt.Fprintln(os.Stdout)
 
 	return nil
 }
@@ -38,13 +40,6 @@ func URLExpand(apiClient *client.Client, short string) error {
 	}
 	_, _ = fmt.Fprintf(os.Stdout, "URL: %s\n", linkResp.URL)
 	_, _ = fmt.Fprintf(os.Stdout, "Expires: %s\n", linkResp.ExpiresAt.Format(time.RFC3339))
-
-	cfg, _ := config.Load()
-	if cfg.AutoCopyClipboard {
-		if err := clipboard.WriteAll(linkResp.URL); err == nil {
-			_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
-		}
-	}
 
 	return nil
 }

@@ -15,14 +15,16 @@ func IP(apiClient *client.Client) error {
 	if err != nil {
 		return fmt.Errorf("failed to get IP: %w", err)
 	}
-	_, _ = fmt.Fprintln(os.Stdout, ip)
+	_, _ = fmt.Fprint(os.Stdout, ip)
 
 	cfg, _ := config.Load()
 	if cfg.AutoCopyClipboard {
 		if err := clipboard.WriteAll(ip); err == nil {
-			_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
+			_, _ = fmt.Fprint(os.Stdout, "     \033[90m\033[2m ✓ copied\033[0m")
 		}
 	}
+
+	_, _ = fmt.Fprintln(os.Stdout)
 
 	return nil
 }

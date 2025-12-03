@@ -12,6 +12,7 @@ import (
 )
 
 // ImageUpload uploads an image, optionally encrypting it and/or making it one-time
+//
 //nolint:revive // encrypted and onetime flags are acceptable for control flow
 func ImageUpload(apiClient *client.Client, imagePath string, encrypted bool, onetime bool) error {
 	// Read image file
@@ -66,14 +67,16 @@ func ImageUpload(apiClient *client.Client, imagePath string, encrypted bool, one
 		fullURL = imageURL
 	}
 
-	_, _ = fmt.Fprintln(os.Stdout, fullURL)
+	_, _ = fmt.Fprint(os.Stdout, fullURL)
 
 	cfg, _ := config.Load()
 	if cfg.AutoCopyClipboard {
 		if err := clipboard.WriteAll(fullURL); err == nil {
-			_, _ = fmt.Fprintln(os.Stdout, "Copied to clipboard")
+			_, _ = fmt.Fprint(os.Stdout, "     \033[90m\033[2m ✓ copied\033[0m")
 		}
 	}
+
+	_, _ = fmt.Fprintln(os.Stdout)
 
 	return nil
 }
