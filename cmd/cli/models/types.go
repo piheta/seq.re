@@ -10,7 +10,9 @@ type IPResponse struct {
 
 // LinkRequest represents a request to create a shortened URL
 type LinkRequest struct {
-	URL string `json:"url"`
+	URL       string `json:"url"`
+	Encrypted bool   `json:"encrypted"`
+	OneTime   bool   `json:"onetime"`
 }
 
 // LinkResponse represents link information

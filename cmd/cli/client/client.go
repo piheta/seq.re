@@ -110,8 +110,13 @@ func (c *Client) GetLink(short string) (*models.LinkResponse, error) {
 }
 
 // CreateLink creates a shortened URL
-func (c *Client) CreateLink(url string) (string, error) {
-	linkReq := models.LinkRequest{URL: url}
+//nolint:revive // encrypted and onetime flags are acceptable for control flow
+func (c *Client) CreateLink(url string, encrypted bool, onetime bool) (string, error) {
+	linkReq := models.LinkRequest{
+		URL:       url,
+		Encrypted: encrypted,
+		OneTime:   onetime,
+	}
 	reqBody, err := json.Marshal(linkReq)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal request: %w", err)

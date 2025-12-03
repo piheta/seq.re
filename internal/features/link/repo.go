@@ -43,3 +43,13 @@ func (r *LinkRepo) GetByShort(short string) (*Link, error) {
 
 	return &link, err
 }
+
+func (r *LinkRepo) Delete(short string) error {
+	return r.db.Update(func(txn *badger.Txn) error {
+		err := txn.Delete([]byte(short))
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			return nil
+		}
+		return err
+	})
+}

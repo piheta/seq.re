@@ -15,7 +15,7 @@ func TestLinkCreation(t *testing.T) {
 	service := link.NewLinkService(repo)
 
 	url := "https://example.com"
-	created, err := service.CreateLink(url)
+	created, err := service.CreateLink(url, false, false)
 
 	if err != nil {
 		t.Fatalf("failed to create link: %v", err)
@@ -31,6 +31,14 @@ func TestLinkCreation(t *testing.T) {
 
 	if created.Short == "" {
 		t.Error("expected short code to be generated, got empty string")
+	}
+
+	if created.Encrypted {
+		t.Error("expected Encrypted to be false")
+	}
+
+	if created.OneTime {
+		t.Error("expected OneTime to be false")
 	}
 
 	if created.CreatedAt.IsZero() {
@@ -55,7 +63,7 @@ func TestLinkRetrieval(t *testing.T) {
 	service := link.NewLinkService(repo)
 
 	url := "https://example.com"
-	created, err := service.CreateLink(url)
+	created, err := service.CreateLink(url, false, false)
 	if err != nil {
 		t.Fatalf("failed to create link: %v", err)
 	}
@@ -106,7 +114,7 @@ func TestLinkExpiry(t *testing.T) {
 	service := link.NewLinkService(repo)
 
 	url := "https://example.com"
-	created, err := service.CreateLink(url)
+	created, err := service.CreateLink(url, false, false)
 	if err != nil {
 		t.Fatalf("failed to create link: %v", err)
 	}
@@ -125,6 +133,8 @@ func TestLinkExpiry(t *testing.T) {
 	shortLivedLink := link.Link{
 		Short:     "testshort",
 		URL:       "https://short-lived.com",
+		Encrypted: false,
+		OneTime:   false,
 		CreatedAt: time.Now(),
 		ExpiresAt: time.Now().Add(1 * time.Second),
 	}
@@ -175,7 +185,7 @@ func TestMultipleLinkCreation(t *testing.T) {
 
 	links := make([]*link.Link, len(urls))
 	for i, url := range urls {
-		created, err := service.CreateLink(url)
+		created, err := service.CreateLink(url, false, false)
 		if err != nil {
 			t.Fatalf("failed to create link %d: %v", i, err)
 		}
@@ -203,7 +213,7 @@ func TestShortCodeUniqueness(t *testing.T) {
 	// Create 100 links and verify all have unique short codes
 	shortCodes := make(map[string]bool)
 	for i := range 100 {
-		created, err := service.CreateLink("https://example.com/" + string(rune(i)))
+		created, err := service.CreateLink("https://example.com/"+string(rune(i)), false, false)
 		if err != nil {
 			t.Fatalf("failed to create link %d: %v", i, err)
 		}
@@ -216,5 +226,175 @@ func TestShortCodeUniqueness(t *testing.T) {
 
 	if len(shortCodes) != 100 {
 		t.Errorf("expected 100 unique short codes, got %d", len(shortCodes))
+	}
+}
+
+func TestLinkEncrypted(t *testing.T) {
+	db := SetupTestDB(t)
+	repo := link.NewLinkRepo(db)
+	service := link.NewLinkService(repo)
+
+	url := "https://example.com/secret"
+	created, err := service.CreateLink(url, true, false)
+	if err != nil {
+		t.Fatalf("failed to create encrypted link: %v", err)
+	}
+
+	if !created.Encrypted {
+		t.Error("expected Encrypted to be true")
+	}
+
+	// First retrieval should succeed
+	retrieved, err := service.GetLinkByShort(created.Short)
+	if err != nil {
+		t.Fatalf("failed to retrieve encrypted link: %v", err)
+	}
+
+	if retrieved == nil {
+		t.Fatal("expected link to be retrieved, got nil")
+	}
+
+	if retrieved.URL != url {
+		t.Errorf("expected URL %s, got %s", url, retrieved.URL)
+	}
+
+	// Second retrieval should fail (encrypted links are deleted after first view)
+	retrieved, err = service.GetLinkByShort(created.Short)
+	if err == nil {
+		t.Fatal("expected error on second retrieval of encrypted link, got nil")
+	}
+
+	if !errors.Is(err, badger.ErrKeyNotFound) {
+		t.Errorf("expected ErrKeyNotFound, got %v", err)
+	}
+
+	if retrieved != nil {
+		t.Errorf("expected nil link after deletion, got %v", retrieved)
+	}
+}
+
+func TestLinkOneTime(t *testing.T) {
+	db := SetupTestDB(t)
+	repo := link.NewLinkRepo(db)
+	service := link.NewLinkService(repo)
+
+	url := "https://example.com/onetime"
+	created, err := service.CreateLink(url, false, true)
+	if err != nil {
+		t.Fatalf("failed to create onetime link: %v", err)
+	}
+
+	if !created.OneTime {
+		t.Error("expected OneTime to be true")
+	}
+
+	// First retrieval should succeed
+	retrieved, err := service.GetLinkByShort(created.Short)
+	if err != nil {
+		t.Fatalf("failed to retrieve onetime link: %v", err)
+	}
+
+	if retrieved == nil {
+		t.Fatal("expected link to be retrieved, got nil")
+	}
+
+	if retrieved.URL != url {
+		t.Errorf("expected URL %s, got %s", url, retrieved.URL)
+	}
+
+	// Second retrieval should fail (onetime links are deleted after first view)
+	retrieved, err = service.GetLinkByShort(created.Short)
+	if err == nil {
+		t.Fatal("expected error on second retrieval of onetime link, got nil")
+	}
+
+	if !errors.Is(err, badger.ErrKeyNotFound) {
+		t.Errorf("expected ErrKeyNotFound, got %v", err)
+	}
+
+	if retrieved != nil {
+		t.Errorf("expected nil link after deletion, got %v", retrieved)
+	}
+}
+
+func TestLinkEncryptedAndOneTime(t *testing.T) {
+	db := SetupTestDB(t)
+	repo := link.NewLinkRepo(db)
+	service := link.NewLinkService(repo)
+
+	url := "https://example.com/super-secret"
+	created, err := service.CreateLink(url, true, true)
+	if err != nil {
+		t.Fatalf("failed to create link: %v", err)
+	}
+
+	if !created.Encrypted {
+		t.Error("expected Encrypted to be true")
+	}
+
+	if !created.OneTime {
+		t.Error("expected OneTime to be true")
+	}
+
+	// First retrieval should succeed
+	retrieved, err := service.GetLinkByShort(created.Short)
+	if err != nil {
+		t.Fatalf("failed to retrieve link: %v", err)
+	}
+
+	if retrieved.URL != url {
+		t.Errorf("expected URL %s, got %s", url, retrieved.URL)
+	}
+
+	// Second retrieval should fail
+	retrieved, err = service.GetLinkByShort(created.Short)
+	if err == nil {
+		t.Fatal("expected error on second retrieval, got nil")
+	}
+
+	if !errors.Is(err, badger.ErrKeyNotFound) {
+		t.Errorf("expected ErrKeyNotFound, got %v", err)
+	}
+}
+
+func TestLinkDeletion(t *testing.T) {
+	db := SetupTestDB(t)
+	repo := link.NewLinkRepo(db)
+	service := link.NewLinkService(repo)
+
+	url := "https://example.com/to-delete"
+	created, err := service.CreateLink(url, false, false)
+	if err != nil {
+		t.Fatalf("failed to create link: %v", err)
+	}
+
+	// Verify link exists
+	retrieved, err := service.GetLinkByShort(created.Short)
+	if err != nil {
+		t.Fatalf("failed to retrieve link: %v", err)
+	}
+
+	if retrieved == nil {
+		t.Fatal("expected link to exist, got nil")
+	}
+
+	// Delete the link
+	err = service.DeleteLink(created.Short)
+	if err != nil {
+		t.Fatalf("failed to delete link: %v", err)
+	}
+
+	// Verify link is deleted
+	retrieved, err = service.GetLinkByShort(created.Short)
+	if err == nil {
+		t.Fatal("expected error when retrieving deleted link, got nil")
+	}
+
+	if !errors.Is(err, badger.ErrKeyNotFound) {
+		t.Errorf("expected ErrKeyNotFound, got %v", err)
+	}
+
+	if retrieved != nil {
+		t.Errorf("expected nil, got %v", retrieved)
 	}
 }

@@ -1,6 +1,8 @@
 package link
 
 import (
+	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/piheta/seq.re/internal/shared"
@@ -14,10 +16,12 @@ func NewLinkService(linkRepo *LinkRepo) *LinkService {
 	return &LinkService{linkRepo: linkRepo}
 }
 
-func (s *LinkService) CreateLink(url string) (*Link, error) {
+func (s *LinkService) CreateLink(url string, encrypted, onetime bool) (*Link, error) {
 	link := Link{
 		Short:     shared.CreateShort(),
 		URL:       url,
+		Encrypted: encrypted,
+		OneTime:   onetime,
 		CreatedAt: time.Now(),
 		ExpiresAt: time.Now().Add(7 * 24 * time.Hour),
 	}
@@ -36,5 +40,25 @@ func (s *LinkService) GetLinkByShort(short string) (*Link, error) {
 		return nil, err
 	}
 
+	if link.Encrypted {
+		if err := s.DeleteLink(short); err != nil {
+			slog.With("error", err).With("short", short).Error("failed to delete encrypted paste after retrieval")
+			return nil, errors.New("failed to delete paste")
+		}
+
+		return link, nil
+	}
+
+	if link.OneTime {
+		if err := s.DeleteLink(short); err != nil {
+			slog.With("error", err).With("short", short).Error("failed to delete onetime paste after retrieval")
+			return nil, errors.New("failed to delete paste")
+		}
+	}
+
 	return link, nil
+}
+
+func (s *LinkService) DeleteLink(short string) error {
+	return s.linkRepo.Delete(short)
 }

@@ -59,11 +59,19 @@ func (h *LinkHandler) CreateLink(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if err := s.Validate.Struct(&linkReq); err != nil {
-		return err
+	// Skip URL validation for encrypted links (client encrypts before sending)
+	// For encrypted links, only verify that URL field is not empty
+	if linkReq.Encrypted {
+		if linkReq.URL == "" {
+			return apierr.NewError(400, "validation", "URL is required")
+		}
+	} else {
+		if err := s.Validate.Struct(&linkReq); err != nil {
+			return err
+		}
 	}
 
-	link, err := h.linkService.CreateLink(linkReq.URL)
+	link, err := h.linkService.CreateLink(linkReq.URL, linkReq.Encrypted, linkReq.OneTime)
 	if err != nil {
 		return err
 	}

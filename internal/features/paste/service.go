@@ -19,10 +19,8 @@ func NewPasteService(pasteRepo *PasteRepo) *PasteService {
 }
 
 func (s *PasteService) CreatePaste(content string, language string, encrypted bool, onetime bool) (*Paste, error) {
-	short := shared.CreateShort()
-
 	paste := Paste{
-		Short:     short,
+		Short:     shared.CreateShort(),
 		Content:   content,
 		Language:  language,
 		Encrypted: encrypted,
@@ -46,7 +44,6 @@ func (s *PasteService) GetPaste(short string) (*Paste, error) {
 	}
 
 	if paste.Encrypted {
-		// Content is already base64-encoded from client encryption
 		if err := s.DeletePaste(short); err != nil {
 			slog.With("error", err).With("short", short).Error("failed to delete encrypted paste after retrieval")
 			return nil, errors.New("failed to delete paste")

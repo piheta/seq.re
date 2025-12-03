@@ -20,7 +20,7 @@ var (
 func main() {
 	if len(os.Args) < 2 {
 		printUsage()
-		os.Exit(1)
+		return
 	}
 
 	command := os.Args[1]
@@ -48,17 +48,40 @@ func main() {
 	switch command {
 	case "url":
 		if len(os.Args) < 3 {
-			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre url <URL>\n")
+			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre url <URL> [--encrypted] [--onetime]\n")
+			_, _ = fmt.Fprint(os.Stdout, "       seqre url get <short> [key]\n")
 			os.Exit(1)
 		}
-		err = commands.URLShorten(apiClient, os.Args[2])
+		if os.Args[2] == "get" {
+			if len(os.Args) < 4 {
+				_, _ = fmt.Fprint(os.Stdout, "Usage: seqre url get <short> [key]\n")
+				os.Exit(1)
+			}
+			short := os.Args[3]
+			keyFragment := ""
+			if len(os.Args) >= 5 {
+				keyFragment = os.Args[4]
+			}
+			err = commands.URLExpand(apiClient, short, keyFragment)
+		} else {
+			url := os.Args[2]
+			encrypted := false
+			onetime := false
 
-	case "expand":
-		if len(os.Args) < 3 {
-			_, _ = fmt.Fprint(os.Stdout, "Usage: seqre expand <short>\n")
-			os.Exit(1)
+			// Parse flags
+			for i := 3; i < len(os.Args); i++ {
+				switch os.Args[i] {
+				case "--encrypted":
+					encrypted = true
+				case "--onetime":
+					onetime = true
+				default:
+					// Ignore unknown flags
+				}
+			}
+
+			err = commands.URLShorten(apiClient, url, encrypted, onetime)
 		}
-		err = commands.URLExpand(apiClient, os.Args[2])
 
 	case "ip":
 		err = commands.IP(apiClient)
@@ -217,17 +240,17 @@ func handleConfigCommand() error {
 func printUsage() {
 	_, _ = fmt.Fprint(os.Stdout, "Usage: seqre <command> [args]\n")
 	_, _ = fmt.Fprint(os.Stdout, "Commands:\n")
-	_, _ = fmt.Fprint(os.Stdout, "  url <URL>                                    Create a shortened URL\n")
-	_, _ = fmt.Fprint(os.Stdout, "  expand <short>                               Expand a shortened URL\n")
-	_, _ = fmt.Fprint(os.Stdout, "  secret <text>                                Create an encrypted secret\n")
-	_, _ = fmt.Fprint(os.Stdout, "  secret get <short> <key>                     Retrieve and decrypt a secret\n")
-	_, _ = fmt.Fprint(os.Stdout, "  img <file> [--encrypted] [--onetime]         Upload an image\n")
-	_, _ = fmt.Fprint(os.Stdout, "  img get <short> [key]                        Download an image\n")
-	_, _ = fmt.Fprint(os.Stdout, "  paste <file> [--language <lang>] [--encrypted] [--onetime]  Upload a paste\n")
-	_, _ = fmt.Fprint(os.Stdout, "  paste get <url|short> [key]                  Retrieve a paste\n")
-	_, _ = fmt.Fprint(os.Stdout, "  ip                                           Get your IP address\n")
-	_, _ = fmt.Fprint(os.Stdout, "  config set <server>                          Set the server URL\n")
-	_, _ = fmt.Fprint(os.Stdout, "  config get                                   Get the server URL\n")
-	_, _ = fmt.Fprint(os.Stdout, "  config clipboard <on|off>                    Enable/disable auto-copy to clipboard\n")
-	_, _ = fmt.Fprint(os.Stdout, "  version                                      Show version information\n")
+	_, _ = fmt.Fprint(os.Stdout, "  ip                                                              Get your IP address\n")
+	_, _ = fmt.Fprint(os.Stdout, "  url <URL> [--encrypted] [--onetime]                             Create a shortened URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  url get <short> [key]                                           Expand a shortened URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  secret <text>                                                   Create an encrypted secret\n")
+	_, _ = fmt.Fprint(os.Stdout, "  secret get <short> <key>                                        Retrieve and decrypt a secret\n")
+	_, _ = fmt.Fprint(os.Stdout, "  img <file> [--encrypted] [--onetime]                            Upload an image\n")
+	_, _ = fmt.Fprint(os.Stdout, "  img get <short> [key]                                           Download an image\n")
+	_, _ = fmt.Fprint(os.Stdout, "  paste <file> [--language <lang>] [--encrypted] [--onetime]      Upload a paste\n")
+	_, _ = fmt.Fprint(os.Stdout, "  paste get <url|short> [key]                                     Retrieve a paste\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config set <server>                                             Set the server URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config get                                                      Get the server URL\n")
+	_, _ = fmt.Fprint(os.Stdout, "  config clipboard <on|off>                                       Enable/disable auto-copy to clipboard\n")
+	_, _ = fmt.Fprint(os.Stdout, "  version                                                         Show version information\n")
 }
