@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/piheta/apicore/middleware"
+	mw "github.com/piheta/apicore/middleware"
 	"github.com/piheta/seq.re/config"
 	"github.com/piheta/seq.re/internal/features/img"
 	"github.com/piheta/seq.re/internal/features/ip"
@@ -20,7 +20,6 @@ import (
 	"github.com/piheta/seq.re/internal/features/web"
 	localmw "github.com/piheta/seq.re/internal/middleware"
 	"github.com/piheta/seq.re/internal/shared"
-	"golang.org/x/time/rate"
 
 	_ "github.com/piheta/seq.re/docs"
 )
@@ -78,38 +77,37 @@ func main() {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", fs))
 
 	// Web UI routes
-	mux.Handle("GET /", middleware.Public(webHandler.ServeIndex))
-	mux.Handle("GET /tab/url", middleware.Public(webHandler.ServeURLTab))
-	mux.Handle("GET /tab/image", middleware.Public(webHandler.ServeImageTab))
-	mux.Handle("GET /tab/secret", middleware.Public(webHandler.ServeSecretTab))
-	mux.Handle("GET /tab/code", middleware.Public(webHandler.ServeCodeTab))
-	mux.Handle("GET /tab/ip", middleware.Public(webHandler.ServeIPTab))
-	mux.Handle("GET /web/detect-ip", middleware.Public(webHandler.DetectIP))
+	mux.Handle("GET /", mw.Public(webHandler.ServeIndex))
+	mux.Handle("GET /tab/url", mw.Public(webHandler.ServeURLTab))
+	mux.Handle("GET /tab/image", mw.Public(webHandler.ServeImageTab))
+	mux.Handle("GET /tab/secret", mw.Public(webHandler.ServeSecretTab))
+	mux.Handle("GET /tab/code", mw.Public(webHandler.ServeCodeTab))
+	mux.Handle("GET /tab/ip", mw.Public(webHandler.ServeIPTab))
+	mux.Handle("GET /web/detect-ip", mw.Public(webHandler.DetectIP))
 
 	// API routes
-	mux.Handle("GET /api/ip", middleware.Public(ipHandler.GetPublicIP))
-	mux.Handle("GET /api/version", middleware.Public(seqreHandler.GetVersion))
+	mux.Handle("GET /api/ip", mw.Public(ipHandler.GetPublicIP))
+	mux.Handle("GET /api/version", mw.Public(seqreHandler.GetVersion))
 
-	mux.Handle("GET /api/links/{short}", middleware.Public(linkHandler.GetLinkByShort))
-	mux.Handle("POST /api/links", middleware.Public(linkHandler.CreateLink))
+	mux.Handle("POST /api/links", mw.Public(linkHandler.CreateLink))
+	mux.Handle("GET /api/links/{short}", localmw.RateLimit(2, 5, mw.Public(linkHandler.GetLinkByShort)))
 
-	mux.Handle("GET /api/secrets/{short}", middleware.Public(secretHandler.GetSecretByShort))
-	mux.Handle("POST /api/secrets", middleware.Public(secretHandler.CreateSecret))
+	mux.Handle("POST /api/secrets", mw.Public(secretHandler.CreateSecret))
+	mux.Handle("GET /api/secrets/{short}", localmw.RateLimit(2, 5, mw.Public(secretHandler.GetSecretByShort)))
 
-	mux.Handle("POST /api/images", middleware.Public(imageHandler.CreateImage))
-	mux.Handle("GET /i/{short}", middleware.Public(imageHandler.GetImageByShort))
+	mux.Handle("POST /api/images", mw.Public(imageHandler.CreateImage))
+	mux.Handle("GET /i/{short}", localmw.RateLimit(2, 5, mw.Public(imageHandler.GetImageByShort)))
 
-	mux.Handle("POST /api/pastes", middleware.Public(pasteHandler.CreatePaste))
-	mux.Handle("GET /p/{short}", middleware.Public(pasteHandler.GetPasteByShort))
+	mux.Handle("POST /api/pastes", mw.Public(pasteHandler.CreatePaste))
+	mux.Handle("GET /p/{short}", localmw.RateLimit(2, 5, mw.Public(pasteHandler.GetPasteByShort)))
 
 	// Apply rate limiting to redirect endpoint: 2 requests per second with burst of 5
 	// This must be last to not conflict with other routes
-	rateLimitedRedirect := localmw.RateLimit(rate.Limit(2), 5)(middleware.Public(linkHandler.RedirectByShort))
-	mux.Handle("GET /{short}", rateLimitedRedirect)
+	mux.Handle("GET /{short}", localmw.RateLimit(2, 5, mw.Public(linkHandler.RedirectByShort)))
 
 	server := &http.Server{
 		Addr:         ":8080",
-		Handler:      middleware.SecurityHeaders(middleware.RequestLogger(mux)),
+		Handler:      mw.SecurityHeaders(mw.RequestLogger(mux)),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
