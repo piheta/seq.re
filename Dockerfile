@@ -20,6 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 FROM scratch
 
 COPY --from=builder /app/seqre-server /seqre-server
+COPY --from=builder /app/web /web
 
 ENV REDIRECT_HOST=http://localhost
 ENV REDIRECT_PORT=:8080
