@@ -64,6 +64,8 @@ func main() {
 	imageService := img.NewImageService(imageRepo, config.GetDataPath()+"/imgs")
 	pasteService := paste.NewPasteService(pasteRepo)
 
+	imageService.StartCleanupWorker(1 * time.Hour)
+
 	ipHandler := ip.NewIPHandler(ipService)
 	linkHandler := link.NewLinkHandler(linkService)
 	secretHandler := secret.NewSecretHandler(secretService)
