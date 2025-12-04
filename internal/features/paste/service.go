@@ -43,15 +43,6 @@ func (s *PasteService) GetPaste(short string) (*Paste, error) {
 		return nil, err
 	}
 
-	if paste.Encrypted {
-		if err := s.DeletePaste(short); err != nil {
-			slog.With("error", err).With("short", short).Error("failed to delete encrypted paste after retrieval")
-			return nil, errors.New("failed to delete paste")
-		}
-
-		return paste, nil
-	}
-
 	if paste.OneTime {
 		if err := s.DeletePaste(short); err != nil {
 			slog.With("error", err).With("short", short).Error("failed to delete onetime paste after retrieval")

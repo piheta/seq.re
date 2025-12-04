@@ -10,7 +10,7 @@
     <script src="/static/crypto.js"></script>
     <style>
         body {
-            background-image: radial-gradient(hsla(255, 100%, 100%, 1.00) 10%, transparent 0);
+            background-image: radial-gradient(hsla(255, 100%, 100%, 1.00) 15%, transparent 0);
             background-size: 30px 30px;
         }
     </style>
@@ -24,7 +24,7 @@
 
         <!-- Tabs -->
         <div class="bg-white rounded-lg shadow-sm mb-6 p-2">
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-1">
                 <button hx-get="/tab/url" hx-target="#tab-content" hx-swap="innerHTML"
                     class="tab-button flex items-center gap-2 px-4 py-2 rounded-md transition-colors bg-gray-100 text-gray-900"
                     onclick="setActiveTab(this)">
@@ -87,6 +87,24 @@
             hx-swap="innerHTML">
             <!-- Content will be loaded here -->
         </div>
+
+        <footer class="mt-8 pt-6 border-t border-gray-200">
+            <div class="flex flex-wrap gap-4 text-gray-600 text-sm">
+                <a href="https://github.com/piheta/seq.re" class="hover:text-gray-900 transition-colors"
+                    target="_blank">GitHub</a>
+                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#cli"
+                    class="hover:text-gray-900 transition-colors" target="_blank">CLI</a>
+                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#server-deployment"
+                    class="hover:text-gray-900 transition-colors" target="_blank">Host Your Own</a>
+                <a href="/privacy" class="hover:text-gray-900 transition-colors">Privacy Policy</a>
+                <a href="https://github.com/piheta/seq.re/blob/main/LICENSE"
+                    class="hover:text-gray-900 transition-colors" target="_blank">License</a>
+                {{if .ContactEmail}}
+                <a href="mailto:{{.ContactEmail}}" class="hover:text-gray-900 transition-colors">Contact</a>
+                {{end}}
+                <span class="text-gray-400">v1.0.0</span>
+            </div>
+        </footer>
     </div>
 
     <script>

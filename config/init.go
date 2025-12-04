@@ -15,6 +15,7 @@ type config struct {
 	BehindProxy     bool
 	DataPath        string
 	DBEncryptionKey string
+	ContactEmail    string
 }
 
 var Config config
@@ -32,6 +33,7 @@ func InitEnv() {
 		BehindProxy:     os.Getenv("BEHIND_PROXY") == "true", // Required in order to determine sender ip
 		DataPath:        os.Getenv("DATA_PATH"),
 		DBEncryptionKey: os.Getenv("DB_ENCRYPTION_KEY"),
+		ContactEmail:    os.Getenv("CONTACT_EMAIL"),
 	}
 
 	if !dotEnvLoaded {

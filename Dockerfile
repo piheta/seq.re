@@ -27,6 +27,7 @@ ENV REDIRECT_PORT=:8080
 ENV BEHIND_PROXY=false
 ENV DATA_PATH=/data/seqre
 # ENV DB_ENCRYPTION_KEY= (optional: 32/48/64 hex chars for AES-128/192/256). make using `openssl rand -hex 32`
+# ENV CONTACT_EMAIL= (optional: contact email for the frontend footer)
 
 VOLUME ["/data"]
 

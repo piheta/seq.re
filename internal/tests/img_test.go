@@ -131,7 +131,7 @@ func TestImageRetrieval(t *testing.T) {
 	}
 
 	// Retrieve the image
-	retrievedData, retrievedType, encrypted, err := service.GetImage(created.Short)
+	retrievedImage, retrievedData, err := service.GetImage(created.Short)
 	if err != nil {
 		t.Fatalf("failed to retrieve image: %v", err)
 	}
@@ -140,16 +140,16 @@ func TestImageRetrieval(t *testing.T) {
 		t.Errorf("expected image data %s, got %s", imageData, retrievedData)
 	}
 
-	if retrievedType != contentType {
-		t.Errorf("expected content type %s, got %s", contentType, retrievedType)
+	if retrievedImage.ContentType != contentType {
+		t.Errorf("expected content type %s, got %s", contentType, retrievedImage.ContentType)
 	}
 
-	if encrypted {
+	if retrievedImage.Encrypted {
 		t.Error("expected encrypted to be false")
 	}
 
 	// Verify image still exists (not one-time)
-	_, _, _, err = service.GetImage(created.Short)
+	_, _, err = service.GetImage(created.Short)
 	if err != nil {
 		t.Error("expected image to still exist after first retrieval")
 	}
@@ -170,7 +170,7 @@ func TestOneTimeImageDeletion(t *testing.T) {
 	}
 
 	// Retrieve once
-	_, _, _, err = service.GetImage(created.Short)
+	_, _, err = service.GetImage(created.Short)
 	if err != nil {
 		t.Fatalf("failed to retrieve onetime image: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestOneTimeImageDeletion(t *testing.T) {
 	}
 
 	// Try to retrieve again - should fail
-	_, _, _, err = service.GetImage(created.Short)
+	_, _, err = service.GetImage(created.Short)
 	if err == nil {
 		t.Error("expected error when retrieving onetime image again")
 	}
@@ -191,7 +191,7 @@ func TestOneTimeImageDeletion(t *testing.T) {
 	}
 }
 
-func TestEncryptedImageDeletion(t *testing.T) {
+func TestEncryptedImagePersistence(t *testing.T) {
 	db := SetupTestDB(t)
 	tempDir := t.TempDir()
 	repo := img.NewImageRepo(db)
@@ -200,18 +200,19 @@ func TestEncryptedImageDeletion(t *testing.T) {
 	imageData := []byte("encrypted image")
 	contentType := "application/octet-stream"
 
+	// Create encrypted image WITHOUT onetime flag
 	created, err := service.CreateImage(imageData, contentType, true, false)
 	if err != nil {
 		t.Fatalf("failed to create encrypted image: %v", err)
 	}
 
 	// Retrieve once
-	retrievedData, _, encrypted, err := service.GetImage(created.Short)
+	retrievedImage, retrievedData, err := service.GetImage(created.Short)
 	if err != nil {
 		t.Fatalf("failed to retrieve encrypted image: %v", err)
 	}
 
-	if !encrypted {
+	if !retrievedImage.Encrypted {
 		t.Error("expected encrypted flag to be true")
 	}
 
@@ -220,15 +221,15 @@ func TestEncryptedImageDeletion(t *testing.T) {
 		t.Error("expected base64 encoded data, got raw data")
 	}
 
-	// Verify file was deleted from disk
-	if _, err := os.Stat(created.FilePath); !os.IsNotExist(err) {
-		t.Error("expected encrypted file to be deleted from disk after retrieval")
+	// Verify file still exists (encrypted but not onetime)
+	if _, err := os.Stat(created.FilePath); os.IsNotExist(err) {
+		t.Error("expected encrypted non-onetime file to still exist")
 	}
 
-	// Try to retrieve again - should fail
-	_, _, _, err = service.GetImage(created.Short)
-	if err == nil {
-		t.Error("expected error when retrieving encrypted image again")
+	// Try to retrieve again - should succeed
+	_, _, err = service.GetImage(created.Short)
+	if err != nil {
+		t.Error("expected encrypted non-onetime image to be retrievable multiple times")
 	}
 }
 
@@ -239,7 +240,7 @@ func TestImageNotFound(t *testing.T) {
 	service := img.NewImageService(repo, tempDir)
 
 	// Try to retrieve non-existent image
-	_, _, _, err := service.GetImage("nonexistent")
+	_, _, err := service.GetImage("nonexistent")
 
 	if err == nil {
 		t.Fatal("expected error for non-existent image, got nil")
@@ -276,17 +277,17 @@ func TestMultipleImageCreation(t *testing.T) {
 
 	// Verify all images can be retrieved
 	for i, created := range createdImages {
-		retrieved, contentType, _, err := service.GetImage(created.Short)
+		retrievedImage, retrievedData, err := service.GetImage(created.Short)
 		if err != nil {
 			t.Fatalf("failed to retrieve image %d: %v", i, err)
 		}
 
-		if string(retrieved) != string(images[i].data) {
-			t.Errorf("image %d: expected data %s, got %s", i, images[i].data, retrieved)
+		if string(retrievedData) != string(images[i].data) {
+			t.Errorf("image %d: expected data %s, got %s", i, images[i].data, retrievedData)
 		}
 
-		if contentType != images[i].contentType {
-			t.Errorf("image %d: expected content type %s, got %s", i, images[i].contentType, contentType)
+		if retrievedImage.ContentType != images[i].contentType {
+			t.Errorf("image %d: expected content type %s, got %s", i, images[i].contentType, retrievedImage.ContentType)
 		}
 	}
 }
@@ -335,7 +336,7 @@ func TestImageExpiry(t *testing.T) {
 	}
 
 	// Verify it exists
-	_, _, _, err = service.GetImage("testshort")
+	_, _, err = service.GetImage("testshort")
 	if err != nil {
 		t.Fatalf("failed to retrieve short-lived image: %v", err)
 	}
@@ -344,7 +345,7 @@ func TestImageExpiry(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Verify it's gone from DB
-	_, _, _, err = service.GetImage("testshort")
+	_, _, err = service.GetImage("testshort")
 	if err == nil {
 		t.Error("expected error after image expiry, got nil")
 	}
@@ -435,14 +436,14 @@ func TestEncryptedAndOneTime(t *testing.T) {
 		t.Error("expected OneTime to be true")
 	}
 
-	// Retrieve once - should delete because encrypted flag triggers deletion
-	_, _, _, err = service.GetImage(created.Short)
+	// Retrieve once - should delete because onetime flag triggers deletion
+	_, _, err = service.GetImage(created.Short)
 	if err != nil {
 		t.Fatalf("failed to retrieve image: %v", err)
 	}
 
 	// Verify it's deleted
-	_, _, _, err = service.GetImage(created.Short)
+	_, _, err = service.GetImage(created.Short)
 	if err == nil {
 		t.Error("expected error when retrieving deleted image")
 	}

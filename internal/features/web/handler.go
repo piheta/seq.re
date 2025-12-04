@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/piheta/seq.re/config"
 	"github.com/piheta/seq.re/internal/shared"
 )
 
@@ -21,7 +22,10 @@ func NewWebHandler() *WebHandler {
 }
 
 func (h *WebHandler) ServeIndex(w http.ResponseWriter, _ *http.Request) error {
-	return h.templates.ExecuteTemplate(w, "index.html", nil)
+	data := map[string]string{
+		"ContactEmail": config.Config.ContactEmail,
+	}
+	return h.templates.ExecuteTemplate(w, "index.html", data)
 }
 
 func (h *WebHandler) ServeURLTab(w http.ResponseWriter, _ *http.Request) error {

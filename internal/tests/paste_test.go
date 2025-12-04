@@ -163,7 +163,7 @@ func TestPasteOneTime(t *testing.T) {
 	}
 }
 
-func TestPasteEncrypted(t *testing.T) {
+func TestPasteEncryptedPersistence(t *testing.T) {
 	db := SetupTestDB(t)
 	repo := paste.NewPasteRepo(db)
 	service := paste.NewPasteService(repo)
@@ -172,6 +172,7 @@ func TestPasteEncrypted(t *testing.T) {
 	plainContent := "encrypted content here"
 	base64Content := base64.StdEncoding.EncodeToString([]byte(plainContent))
 
+	// Create encrypted paste WITHOUT onetime flag
 	created, err := service.CreatePaste(base64Content, "", true, false)
 	if err != nil {
 		t.Fatalf("failed to create paste: %v", err)
@@ -181,7 +182,11 @@ func TestPasteEncrypted(t *testing.T) {
 		t.Error("expected Encrypted to be true")
 	}
 
-	// Retrieve the paste
+	if created.OneTime {
+		t.Error("expected OneTime to be false")
+	}
+
+	// First retrieval should succeed
 	retrieved, err := service.GetPaste(created.Short)
 	if err != nil {
 		t.Fatalf("failed to retrieve encrypted paste: %v", err)
@@ -189,6 +194,10 @@ func TestPasteEncrypted(t *testing.T) {
 
 	if retrieved == nil {
 		t.Fatal("expected paste to be retrieved, got nil")
+	}
+
+	if !retrieved.Encrypted {
+		t.Error("expected Encrypted flag to be true")
 	}
 
 	// Content should remain base64 encoded (not double-encoded)
@@ -201,14 +210,14 @@ func TestPasteEncrypted(t *testing.T) {
 		t.Errorf("expected valid base64 content: %v", err)
 	}
 
-	// Second retrieval should fail (encrypted pastes are deleted after first view)
+	// Second retrieval should succeed (encrypted without onetime should persist)
 	retrieved, err = service.GetPaste(created.Short)
-	if err == nil {
-		t.Fatal("expected error on second retrieval of encrypted paste, got nil")
+	if err != nil {
+		t.Error("expected encrypted non-onetime paste to be retrievable multiple times")
 	}
 
-	if !errors.Is(err, badger.ErrKeyNotFound) {
-		t.Errorf("expected ErrKeyNotFound, got %v", err)
+	if retrieved == nil {
+		t.Error("expected paste to still exist")
 	}
 }
 

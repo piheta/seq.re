@@ -57,37 +57,29 @@ func (s *ImageService) CreateImage(fileData []byte, contentType string, encrypte
 	return &image, nil
 }
 
-//nolint:revive // Multiple return values needed for content, type, encrypted flag, and error
-func (s *ImageService) GetImage(short string) ([]byte, string, bool, error) {
+func (s *ImageService) GetImage(short string) (*Image, []byte, error) {
 	image, err := s.imageRepo.GetByShort(short)
 	if err != nil {
-		return nil, "", false, err
+		return nil, nil, err
 	}
 
 	fileData, err := os.ReadFile(image.FilePath)
 	if err != nil {
-		return nil, "", false, fmt.Errorf("failed to read file: %w", err)
+		return nil, nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	if image.Encrypted {
-		encodedData := []byte(base64.StdEncoding.EncodeToString(fileData))
-
-		if err := s.DeleteImage(short, image.FilePath); err != nil {
-			slog.With("error", err).With("short", short).Error("failed to delete encrypted image after retrieval")
-			return nil, "", false, errors.New("failed to delete image")
-		}
-
-		return encodedData, image.ContentType, true, nil
+		fileData = []byte(base64.StdEncoding.EncodeToString(fileData))
 	}
 
 	if image.OneTime {
 		if err := s.DeleteImage(short, image.FilePath); err != nil {
 			slog.With("error", err).With("short", short).Error("failed to delete onetime image after retrieval")
-			return nil, "", false, errors.New("failed to delete image")
+			return nil, nil, errors.New("failed to delete image")
 		}
 	}
 
-	return fileData, image.ContentType, false, nil
+	return image, fileData, nil
 }
 
 func (s *ImageService) DeleteImage(short string, filePath string) error {

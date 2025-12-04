@@ -40,15 +40,6 @@ func (s *LinkService) GetLinkByShort(short string) (*Link, error) {
 		return nil, err
 	}
 
-	if link.Encrypted {
-		if err := s.DeleteLink(short); err != nil {
-			slog.With("error", err).With("short", short).Error("failed to delete encrypted paste after retrieval")
-			return nil, errors.New("failed to delete paste")
-		}
-
-		return link, nil
-	}
-
 	if link.OneTime {
 		if err := s.DeleteLink(short); err != nil {
 			slog.With("error", err).With("short", short).Error("failed to delete onetime paste after retrieval")

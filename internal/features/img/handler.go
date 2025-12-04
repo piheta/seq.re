@@ -93,23 +93,23 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return apierr.NewError(422, "validation", "Invalid image code")
 	}
 
-	imageData, contentType, encrypted, err := h.imageService.GetImage(short)
+	image, imageData, err := h.imageService.GetImage(short)
 	if err != nil {
 		return apierr.NewError(404, "not_found", "Image not found")
 	}
 
-	if s.IsBrowser(r) && encrypted {
+	if s.IsBrowser(r) && image.Encrypted {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := ImageResponse{Data: string(imageData)}
 		return h.imageViewerTemplate.Execute(w, data)
 	}
 
-	if encrypted {
+	if image.Encrypted {
 		return response.JSON(w, 200, ImageResponse{Data: string(imageData)}) // already base64 encoded
 	}
 
 	// Otherwise return raw image bytes
-	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Type", image.ContentType)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(imageData)
 	return nil

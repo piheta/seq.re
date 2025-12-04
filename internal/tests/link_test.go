@@ -229,12 +229,13 @@ func TestShortCodeUniqueness(t *testing.T) {
 	}
 }
 
-func TestLinkEncrypted(t *testing.T) {
+func TestLinkEncryptedPersistence(t *testing.T) {
 	db := SetupTestDB(t)
 	repo := link.NewLinkRepo(db)
 	service := link.NewLinkService(repo)
 
 	url := "https://example.com/secret"
+	// Create encrypted link WITHOUT onetime flag
 	created, err := service.CreateLink(url, true, false)
 	if err != nil {
 		t.Fatalf("failed to create encrypted link: %v", err)
@@ -242,6 +243,10 @@ func TestLinkEncrypted(t *testing.T) {
 
 	if !created.Encrypted {
 		t.Error("expected Encrypted to be true")
+	}
+
+	if created.OneTime {
+		t.Error("expected OneTime to be false")
 	}
 
 	// First retrieval should succeed
@@ -258,18 +263,18 @@ func TestLinkEncrypted(t *testing.T) {
 		t.Errorf("expected URL %s, got %s", url, retrieved.URL)
 	}
 
-	// Second retrieval should fail (encrypted links are deleted after first view)
+	if !retrieved.Encrypted {
+		t.Error("expected Encrypted flag to be true")
+	}
+
+	// Second retrieval should succeed (encrypted without onetime should persist)
 	retrieved, err = service.GetLinkByShort(created.Short)
-	if err == nil {
-		t.Fatal("expected error on second retrieval of encrypted link, got nil")
+	if err != nil {
+		t.Error("expected encrypted non-onetime link to be retrievable multiple times")
 	}
 
-	if !errors.Is(err, badger.ErrKeyNotFound) {
-		t.Errorf("expected ErrKeyNotFound, got %v", err)
-	}
-
-	if retrieved != nil {
-		t.Errorf("expected nil link after deletion, got %v", retrieved)
+	if retrieved == nil {
+		t.Error("expected link to still exist")
 	}
 }
 
