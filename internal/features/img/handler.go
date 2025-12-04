@@ -2,20 +2,27 @@ package img
 
 import (
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 
 	"github.com/piheta/apicore/apierr"
 	"github.com/piheta/apicore/response"
 	"github.com/piheta/seq.re/config"
+	s "github.com/piheta/seq.re/internal/shared"
 )
 
 type ImageHandler struct {
-	imageService *ImageService
+	imageService        *ImageService
+	imageViewerTemplate *template.Template
 }
 
 func NewImageHandler(imageService *ImageService) *ImageHandler {
-	return &ImageHandler{imageService: imageService}
+	tmpl := template.Must(template.ParseFiles("web/templates/image-viewer.html"))
+	return &ImageHandler{
+		imageService:        imageService,
+		imageViewerTemplate: tmpl,
+	}
 }
 
 // CreateImage uploads an image file
@@ -91,8 +98,14 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return apierr.NewError(404, "not_found", "Image not found")
 	}
 
+	if s.IsBrowser(r) && encrypted {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := ImageResponse{Data: string(imageData)}
+		return h.imageViewerTemplate.Execute(w, data)
+	}
+
 	if encrypted {
-		return response.JSON(w, 200, ImageResponse{string(imageData)}) // already base64 encoded
+		return response.JSON(w, 200, ImageResponse{Data: string(imageData)}) // already base64 encoded
 	}
 
 	// Otherwise return raw image bytes

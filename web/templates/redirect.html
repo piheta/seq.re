@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f9fafb;
+        }
+
+        .loader {
+            text-align: center;
+        }
+
+        .spinner {
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #dc2626;
+            max-width: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <div id="message">Redirecting...</div>
+    </div>
+
+    <script>
+        // Inline crypto functions for faster loading (no external JS file)
+        async function importKey(base64url) {
+            const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+            const padding = '='.repeat((4 - base64.length % 4) % 4);
+            const raw = Uint8Array.from(atob(base64 + padding), c => c.charCodeAt(0));
+            return await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, true, ["decrypt"]);
+        }
+
+        async function decrypt(base64Data, key) {
+            const combined = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+            const iv = combined.slice(0, 12);
+            const ciphertext = combined.slice(12);
+            const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, ciphertext);
+            return new TextDecoder().decode(decrypted);
+        }
+
+        // Encrypted URL embedded in page
+        const encryptedURL = "{{.URL}}";
+        const hash = location.hash.slice(1);
+
+        // Start decryption immediately (no function wrapper for faster execution)
+        if (!hash) {
+            document.getElementById('message').textContent = 'Error: Encryption key not found in URL';
+            document.getElementById('message').className = 'error';
+            document.querySelector('.spinner').style.display = 'none';
+        } else {
+            importKey(hash)
+                .then(key => decrypt(encryptedURL, key))
+                .then(url => {
+                    // Validate URL protocol to prevent open redirect attacks
+                    try {
+                        const parsed = new URL(url);
+                        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                            location.href = url;
+                        } else {
+                            throw new Error('Invalid URL protocol');
+                        }
+                    } catch (e) {
+                        document.getElementById('message').textContent = 'Error: Invalid URL';
+                        document.getElementById('message').className = 'error';
+                        document.querySelector('.spinner').style.display = 'none';
+                    }
+                })
+                .catch(err => {
+                    console.error('Decryption error:', err);
+                    document.getElementById('message').textContent = 'Failed to decrypt URL. The link may be invalid or expired.';
+                    document.getElementById('message').className = 'error';
+                    document.querySelector('.spinner').style.display = 'none';
+                });
+        }
+    </script>
+</body>
+
+</html>

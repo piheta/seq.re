@@ -3,6 +3,7 @@ package link
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/piheta/apicore/apierr"
@@ -12,14 +13,21 @@ import (
 )
 
 type LinkHandler struct {
-	linkService *LinkService
+	linkService      *LinkService
+	redirectTemplate *template.Template
 }
 
 func NewLinkHandler(linkService *LinkService) *LinkHandler {
-	return &LinkHandler{linkService: linkService}
+	tmpl := template.Must(template.ParseFiles("web/templates/redirect.html"))
+	return &LinkHandler{
+		linkService:      linkService,
+		redirectTemplate: tmpl,
+	}
 }
 
 // RedirectByShort redirects to the original URL based on a short code.
+// For browser requests, serves an HTML page that handles client-side decryption.
+// For non-browser requests (CLI, curl), performs server-side redirect.
 // @Summary Redirect to original URL
 // @Description Redirects to the original URL associated with the given short code
 // @Tags link
@@ -37,6 +45,12 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 	link, err := h.linkService.GetLinkByShort(short)
 	if err != nil {
 		return apierr.NewError(404, "url", "url not found")
+	}
+
+	if s.IsBrowser(r) && link.Encrypted {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := LinkResponse{URL: link.URL}
+		return h.redirectTemplate.Execute(w, data)
 	}
 
 	return response.Redirect(w, r, link.URL)

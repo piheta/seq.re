@@ -3,6 +3,7 @@ package paste
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/piheta/apicore/apierr"
@@ -12,11 +13,16 @@ import (
 )
 
 type PasteHandler struct {
-	pasteService *PasteService
+	pasteService        *PasteService
+	pasteViewerTemplate *template.Template
 }
 
 func NewPasteHandler(pasteService *PasteService) *PasteHandler {
-	return &PasteHandler{pasteService: pasteService}
+	tmpl := template.Must(template.ParseFiles("web/templates/paste-viewer.html"))
+	return &PasteHandler{
+		pasteService:        pasteService,
+		pasteViewerTemplate: tmpl,
+	}
 }
 
 // CreatePaste creates a new text paste
@@ -71,8 +77,20 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 		return apierr.NewError(404, "not_found", "Paste not found")
 	}
 
+	if shared.IsBrowser(r) && paste.Encrypted {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := struct {
+			Data     string
+			Language string
+		}{
+			Data:     paste.Content,
+			Language: paste.Language,
+		}
+		return h.pasteViewerTemplate.Execute(w, data)
+	}
+
 	if paste.Encrypted {
-		return response.JSON(w, 200, PasteResponse{paste.Content}) // already base64 encoded
+		return response.JSON(w, 200, PasteResponse{Data: paste.Content}) // already base64 encoded
 	}
 
 	// Return as plain text with UTF-8 charset

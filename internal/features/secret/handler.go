@@ -3,6 +3,7 @@ package secret
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/piheta/apicore/apierr"
@@ -12,11 +13,16 @@ import (
 )
 
 type SecretHandler struct {
-	secretService *SecretService
+	secretService       *SecretService
+	secretViewerTemplate *template.Template
 }
 
 func NewSecretHandler(secretService *SecretService) *SecretHandler {
-	return &SecretHandler{secretService: secretService}
+	tmpl := template.Must(template.ParseFiles("web/templates/secret-viewer.html"))
+	return &SecretHandler{
+		secretService:       secretService,
+		secretViewerTemplate: tmpl,
+	}
 }
 
 // CreateSecret creates a new shortened URL.
@@ -71,7 +77,13 @@ func (h *SecretHandler) GetSecretByShort(w http.ResponseWriter, r *http.Request)
 		return apierr.NewError(404, "not_found", "secret not found or already viewed")
 	}
 
-	secretResp := SecretResponse{secret.Data}
+	if s.IsBrowser(r) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := SecretResponse{Data: secret.Data}
+		return h.secretViewerTemplate.Execute(w, data)
+	}
+
+	secretResp := SecretResponse{Data: secret.Data}
 
 	return response.JSON(w, 200, secretResp)
 }
