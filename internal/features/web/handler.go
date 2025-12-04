@@ -10,20 +10,23 @@ import (
 
 type WebHandler struct {
 	templates *template.Template
+	version   string
 }
 
-func NewWebHandler() *WebHandler {
+func NewWebHandler(version string) *WebHandler {
 	tmpl := template.Must(template.ParseGlob("web/templates/partials/*.html"))
 	tmpl = template.Must(tmpl.ParseFiles("web/templates/index.html"))
 
 	return &WebHandler{
 		templates: tmpl,
+		version:   version,
 	}
 }
 
 func (h *WebHandler) ServeIndex(w http.ResponseWriter, _ *http.Request) error {
 	data := map[string]string{
 		"ContactEmail": config.Config.ContactEmail,
+		"Version":      h.version,
 	}
 	return h.templates.ExecuteTemplate(w, "index.html", data)
 }

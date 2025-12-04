@@ -72,7 +72,7 @@ func main() {
 	imageHandler := img.NewImageHandler(imageService)
 	pasteHandler := paste.NewPasteHandler(pasteService)
 	seqreHandler := seqre.NewSeqreHandler(version, commit, date)
-	webHandler := web.NewWebHandler()
+	webHandler := web.NewWebHandler(version)
 
 	// Static files
 	fs := http.FileServer(http.Dir("web/static"))

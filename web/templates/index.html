@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>seq.re</title>
+    <link rel="icon" type="image/webp" href="/static/favicon.webp">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="/static/crypto.js"></script>
@@ -89,20 +90,24 @@
         </div>
 
         <footer class="mt-8 pt-6 border-t border-gray-200">
-            <div class="flex flex-wrap gap-4 text-gray-600 text-sm">
-                <a href="https://github.com/piheta/seq.re" class="hover:text-gray-900 transition-colors"
-                    target="_blank">GitHub</a>
-                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#cli"
-                    class="hover:text-gray-900 transition-colors" target="_blank">CLI</a>
-                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#server-deployment"
-                    class="hover:text-gray-900 transition-colors" target="_blank">Host Your Own</a>
-                <a href="/privacy" class="hover:text-gray-900 transition-colors">Privacy Policy</a>
-                <a href="https://github.com/piheta/seq.re/blob/main/LICENSE"
-                    class="hover:text-gray-900 transition-colors" target="_blank">License</a>
-                {{if .ContactEmail}}
-                <a href="mailto:{{.ContactEmail}}" class="hover:text-gray-900 transition-colors">Contact</a>
+            <div class="flex flex-wrap justify-between items-center gap-4 text-gray-600 text-sm">
+                <div class="flex flex-wrap gap-4">
+                    <a href="https://github.com/piheta/seq.re" class="hover:text-gray-900 transition-colors"
+                        target="_blank">GitHub</a>
+                    <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#cli"
+                        class="hover:text-gray-900 transition-colors" target="_blank">CLI</a>
+                    <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#server-deployment"
+                        class="hover:text-gray-900 transition-colors" target="_blank">Host Your Own</a>
+                    <a href="/privacy" class="hover:text-gray-900 transition-colors">Privacy Policy</a>
+                    <a href="https://github.com/piheta/seq.re/blob/main/LICENSE"
+                        class="hover:text-gray-900 transition-colors" target="_blank">License</a>
+                    {{if .ContactEmail}}
+                    <a href="mailto:{{.ContactEmail}}" class="hover:text-gray-900 transition-colors">Contact</a>
+                    {{end}}
+                </div>
+                {{if .Version}}
+                <span class="text-gray-400">{{.Version}}</span>
                 {{end}}
-                <span class="text-gray-400">v1.0.0</span>
             </div>
         </footer>
     </div>
