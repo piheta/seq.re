@@ -1,15 +1,14 @@
 package web
 
 import (
-	"encoding/json"
 	"html/template"
-	"io"
 	"net/http"
+
+	"github.com/piheta/seq.re/internal/shared"
 )
 
 type WebHandler struct {
 	templates *template.Template
-	apiClient *http.Client
 }
 
 func NewWebHandler() *WebHandler {
@@ -18,7 +17,6 @@ func NewWebHandler() *WebHandler {
 
 	return &WebHandler{
 		templates: tmpl,
-		apiClient: http.DefaultClient,
 	}
 }
 
@@ -46,28 +44,10 @@ func (h *WebHandler) ServeIPTab(w http.ResponseWriter, _ *http.Request) error {
 	return h.templates.ExecuteTemplate(w, "ip-detection.html", nil)
 }
 
-func (h *WebHandler) DetectIP(w http.ResponseWriter, _ *http.Request) error {
-	resp, err := h.apiClient.Get("http://localhost:8080/api/ip")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	var ipResp struct {
-		IP string `json:"ip"`
-	}
-	if err := json.Unmarshal(body, &ipResp); err != nil {
-		return err
-	}
+func (h *WebHandler) DetectIP(w http.ResponseWriter, r *http.Request) error {
+	ip := shared.GetIP(r)
 
 	return h.templates.ExecuteTemplate(w, "ip-result.html", map[string]string{
-		"IPAddress": ipResp.IP,
+		"IPAddress": ip,
 	})
 }
