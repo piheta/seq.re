@@ -17,6 +17,7 @@ A self-hostable collection of everyday utilities — URL shortening, IP lookup, 
 - **End-to-End Encryption** - Optional client-side encryption for URLs, images, and pastes (key never touches server)
 - **One-Time Resources** - Auto-delete links, images, secrets, or pastes after first access
 - **Encrypted KV Database** - Embedded key-value store with automatic TTL-based expiration
+- **Web Interface** - Web UI with support for all features
 - **CLI Tool** - Full-featured command line interface with clipboard integration
 
 ## Server Deployment
@@ -43,8 +44,9 @@ docker run -p 8080:8080 \
 | `REDIRECT_HOST` | `http://localhost` | Base URL for shortened links |
 | `REDIRECT_PORT` | `:8080` | Port suffix for URLs (use `:443` or empty for standard ports) |
 | `BEHIND_PROXY` | `false` | Set to `true` when behind Cloudflare/Nginx to trust proxy headers |
-| `DATA_PATH` | `/data/seqre` | Database storage path | Optional: Override the default db path
+| `DATA_PATH` | `/data/seqre` | Database storage path |
 | `DB_ENCRYPTION_KEY` | - | Optional: 32/48/64 hex chars for AES-128/192/256 encryption |
+| `CONTACT_EMAIL` | - | Optional: Contact email displayed in web UI footer |
 
 **Important:** Store the encryption key securely! Without it, your database cannot be decrypted.
 
@@ -78,6 +80,3 @@ Commands:
   config clipboard <on|off>                                       Enable/disable auto-copy to clipboard
   version                                                         Show version information
 ```
-
-## Roadmap
-- Web UI
