@@ -7,6 +7,8 @@
 
 A self-hostable collection of everyday utilities — URL shortening, IP lookup, secret, image and code sharing — without the ads, telemetry, or third-party dependencies.
 
+**Try it out:** [https://seq.re](https://seq.re)
+
 ## Features
 
 - **URL Shortening** - Create short, unique 6-character codes for long URLs with automatic 7-day expiration
@@ -14,11 +16,13 @@ A self-hostable collection of everyday utilities — URL shortening, IP lookup, 
 - **Image Sharing** - Upload and share images with optional encryption and one-time viewing
 - **Code Sharing** - Share code snippets with syntax highlighting support and optional encryption
 - **IP Detection** - Lookup your IP with support for proxied requests (X-Forwarded-For, X-Real-IP)
-- **End-to-End Encryption** - Optional client-side encryption for URLs, images, and pastes (key never touches server)
+- **End-to-End Encryption** - Optional client-side encryption for URLs, images, and pastes
 - **One-Time Resources** - Auto-delete links, images, secrets, or pastes after first access
 - **Encrypted KV Database** - Embedded key-value store with automatic TTL-based expiration
 - **Web Interface** - Web UI with support for all features
 - **CLI Tool** - Full-featured command line interface with clipboard integration
+
+![seq.re demo](docs/seqre.gif)
 
 ## Server Deployment
 
