@@ -13,14 +13,14 @@ import (
 )
 
 type SecretHandler struct {
-	secretService       *SecretService
+	secretService        *SecretService
 	secretViewerTemplate *template.Template
 }
 
 func NewSecretHandler(secretService *SecretService) *SecretHandler {
 	tmpl := template.Must(template.ParseFiles("web/templates/secret-viewer.html"))
 	return &SecretHandler{
-		secretService:       secretService,
+		secretService:        secretService,
 		secretViewerTemplate: tmpl,
 	}
 }
@@ -51,7 +51,7 @@ func (h *SecretHandler) CreateSecret(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	secretURL := fmt.Sprintf("%s%s/api/secrets/%s", config.Config.RedirectHost, config.Config.RedirectPort, secret.Short)
+	secretURL := fmt.Sprintf("%s%s/s/%s", config.Config.RedirectHost, config.Config.RedirectPort, secret.Short)
 
 	return response.JSON(w, 201, secretURL)
 }
@@ -64,7 +64,7 @@ func (h *SecretHandler) CreateSecret(w http.ResponseWriter, r *http.Request) err
 // @Success 200 {object} SecretResponse "Secret information"
 // @Failure 404
 // @Failure 422
-// @Router /api/secrets/{short} [get]
+// @Router /s/{short} [get]
 func (h *SecretHandler) GetSecretByShort(w http.ResponseWriter, r *http.Request) error {
 	short := r.PathValue("short")
 

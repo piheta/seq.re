@@ -110,6 +110,7 @@ func (c *Client) GetLink(short string) (*models.LinkResponse, error) {
 }
 
 // CreateLink creates a shortened URL
+//
 //nolint:revive // encrypted and onetime flags are acceptable for control flow
 func (c *Client) CreateLink(url string, encrypted bool, onetime bool) (string, error) {
 	linkReq := models.LinkRequest{
@@ -185,7 +186,7 @@ func (c *Client) CreateSecret(encryptedData string) (string, error) {
 
 // GetSecret retrieves a secret by short code
 func (c *Client) GetSecret(short string) (string, error) {
-	resp, err := http.Get(c.BaseURL + "/api/secrets/" + short)
+	resp, err := http.Get(c.BaseURL + "/s/" + short)
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}
@@ -212,6 +213,7 @@ func (c *Client) GetSecret(short string) (string, error) {
 }
 
 // CreateImage uploads a raw image file
+//
 //nolint:revive // onetime flag is acceptable for control flow
 func (c *Client) CreateImage(imageData []byte, filename string, onetime bool) (string, error) {
 	body := &bytes.Buffer{}
@@ -271,6 +273,7 @@ func (c *Client) CreateImage(imageData []byte, filename string, onetime bool) (s
 }
 
 // CreateEncryptedImage uploads an encrypted image blob
+//
 //nolint:revive // onetime flag is acceptable for control flow
 func (c *Client) CreateEncryptedImage(encryptedData []byte, onetime bool) (string, error) {
 	body := &bytes.Buffer{}

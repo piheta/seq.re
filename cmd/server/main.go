@@ -95,7 +95,7 @@ func main() {
 	mux.Handle("GET /api/links/{short}", localmw.RateLimit(2, 5, mw.Public(linkHandler.GetLinkByShort)))
 
 	mux.Handle("POST /api/secrets", mw.Public(secretHandler.CreateSecret))
-	mux.Handle("GET /api/secrets/{short}", localmw.RateLimit(2, 5, mw.Public(secretHandler.GetSecretByShort)))
+	mux.Handle("GET /s/{short}", localmw.RateLimit(2, 5, mw.Public(secretHandler.GetSecretByShort)))
 
 	mux.Handle("POST /api/images", mw.Public(imageHandler.CreateImage))
 	mux.Handle("GET /i/{short}", localmw.RateLimit(2, 5, mw.Public(imageHandler.GetImageByShort)))

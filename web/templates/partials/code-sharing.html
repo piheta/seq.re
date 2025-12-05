@@ -10,15 +10,19 @@
 
     <form id="code-form" onsubmit="submitCode(event)">
         <textarea id="code-input" name="code" placeholder="Paste your code snippet" rows="10" required
-            class="w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2 font-mono resize-none"
-            style="border: 1px solid var(--darkreader-border-d1d5db); background-color: var(--darkreader-background-ffffff); color: var(--darkreader-text-111827);"></textarea>
+            class="w-full px-4 py-2 rounded-md focus:outline-none font-mono resize-none"
+            style="border: 2px solid var(--darkreader-border-d1d5db); background-color: var(--darkreader-background-ffffff); color: var(--darkreader-text-111827);"
+            onfocus="this.style.borderColor='var(--darkreader-text-ea580c)'"
+            onblur="this.style.borderColor='var(--darkreader-border-d1d5db)'"></textarea>
 
         <!-- Language Selection -->
         <div class="mt-4">
             <label class="text-sm" style="color: var(--darkreader-text-374151);">Language (optional)</label>
             <select id="language-select"
-                class="mt-1 w-full px-4 py-2 rounded-md focus:outline-none focus:ring-2"
-                style="border: 1px solid var(--darkreader-border-d1d5db); background-color: var(--darkreader-background-ffffff); color: var(--darkreader-text-111827);">
+                class="mt-1 w-full px-4 py-2 rounded-md focus:outline-none"
+                style="border: 2px solid var(--darkreader-border-d1d5db); background-color: var(--darkreader-background-ffffff); color: var(--darkreader-text-111827);"
+                onfocus="this.style.borderColor='var(--darkreader-text-ea580c)'"
+                onblur="this.style.borderColor='var(--darkreader-border-d1d5db)'">
                 <option value="">Plain Text</option>
                 <option value="javascript">JavaScript</option>
                 <option value="python">Python</option>
