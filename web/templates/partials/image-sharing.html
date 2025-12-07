@@ -21,7 +21,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
-            <span style="color: var(--darkreader-text-4b5563);" id="file-label">Click or drag image here</span>
+            <span style="color: var(--darkreader-text-4b5563);" id="file-label">Click, drag, or paste image</span>
         </div>
         <input id="image-input" type="file" name="image" accept="image/*" class="hidden"
             onchange="handleFileSelect(this)" />
@@ -59,6 +59,27 @@
 </div>
 
 <script>
+    // Listen for clipboard paste
+    document.addEventListener('paste', (event) => {
+        // Only handle paste if we're on the image sharing tab and not in an input field
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return; // Let normal paste work in input fields
+        }
+
+        // Check if clipboard contains an image
+        const items = event.clipboardData.items;
+        for (let item of items) {
+            if (item.type.startsWith('image/')) {
+                event.preventDefault();
+                const file = item.getAsFile();
+                if (file) {
+                    processFile(file);
+                }
+                break;
+            }
+        }
+    });
+
     function resetImageUpload() {
         // Hide preview and result
         document.getElementById('image-preview').classList.add('hidden');
@@ -67,7 +88,7 @@
         // Reset file input and label
         const fileInput = document.getElementById('image-input');
         fileInput.value = '';
-        document.getElementById('file-label').textContent = 'Click or drag image here';
+        document.getElementById('file-label').textContent = 'Click, drag, or paste image';
     }
 
     function handleDragOver(event) {
@@ -226,7 +247,7 @@
             // Reset file input (but keep preview visible)
             const fileInput = document.getElementById('image-input');
             fileInput.value = '';
-            document.getElementById('file-label').textContent = 'Click to select image';
+            document.getElementById('file-label').textContent = 'Click, drag or paste image';
         } catch (error) {
             resultDiv.innerHTML = `<div class="mt-4" style="color: var(--darkreader-text-ea580c);">Error: ${error.message}</div>`;
         }
