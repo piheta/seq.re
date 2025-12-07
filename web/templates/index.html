@@ -149,7 +149,7 @@
         <div class="rounded-lg shadow-sm mb-6 p-2" style="background-color: var(--darkreader-background-ffffff);">
             <div class="flex flex-wrap gap-1">
                 <button hx-get="/tab/url" hx-target="#tab-content" hx-swap="innerHTML"
-                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md"
+                    class="tab-button flex items-center justify-center gap-2 px-4 py-2 rounded-md flex-grow sm:flex-grow-0"
                     style="background-color: var(--darkreader-background-f3f4f6); color: var(--darkreader-text-111827);"
                     onclick="setActiveTab(this)">
                     <svg class="w-4 h-4" style="color: var(--darkreader-text-2563eb);" fill="none" stroke="currentColor"
@@ -161,7 +161,7 @@
                     <span class="hidden sm:inline">URL Shortener</span>
                 </button>
                 <button hx-get="/tab/image" hx-target="#tab-content" hx-swap="innerHTML"
-                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md"
+                    class="tab-button flex items-center justify-center gap-2 px-4 py-2 rounded-md flex-grow sm:flex-grow-0"
                     style="color: var(--darkreader-text-4b5563);" onclick="setActiveTab(this)">
                     <svg class="w-4 h-4" style="color: var(--darkreader-text-16a34a);" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -172,7 +172,7 @@
                     <span class="hidden sm:inline">Image Sharing</span>
                 </button>
                 <button hx-get="/tab/secret" hx-target="#tab-content" hx-swap="innerHTML"
-                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md"
+                    class="tab-button flex items-center justify-center gap-2 px-4 py-2 rounded-md flex-grow sm:flex-grow-0"
                     style="color: var(--darkreader-text-4b5563);" onclick="setActiveTab(this)">
                     <svg class="w-4 h-4" style="color: var(--darkreader-text-9333ea);" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -183,7 +183,7 @@
                     <span class="hidden sm:inline">Secret Sharing</span>
                 </button>
                 <button hx-get="/tab/code" hx-target="#tab-content" hx-swap="innerHTML"
-                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md"
+                    class="tab-button flex items-center justify-center gap-2 px-4 py-2 rounded-md flex-grow sm:flex-grow-0"
                     style="color: var(--darkreader-text-4b5563);" onclick="setActiveTab(this)">
                     <svg class="w-4 h-4" style="color: var(--darkreader-text-ea580c);" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -193,7 +193,7 @@
                     <span class="hidden sm:inline">Code Sharing</span>
                 </button>
                 <button hx-get="/tab/ip" hx-target="#tab-content" hx-swap="innerHTML"
-                    class="tab-button flex items-center gap-2 px-4 py-2 rounded-md"
+                    class="tab-button flex items-center justify-center gap-2 px-4 py-2 rounded-md flex-grow sm:flex-grow-0"
                     style="color: var(--darkreader-text-4b5563);" onclick="setActiveTab(this)">
                     <svg class="w-4 h-4" style="color: var(--darkreader-text-4f46e5);" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -213,24 +213,22 @@
         </div>
 
         <footer class="mt-8 pt-6" style="border-top: 1px solid var(--darkreader-border-e5e7eb);">
-            <div class="flex flex-wrap justify-between items-center gap-4 text-sm"
+            <div class="flex flex-wrap items-center gap-4 text-sm"
                 style="color: var(--darkreader-text-4b5563);">
-                <div class="flex flex-wrap gap-4">
-                    <a href="https://github.com/piheta/seq.re" class="transition-colors footer-link"
-                        target="_blank">GitHub</a>
-                    <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#cli"
-                        class="transition-colors footer-link" target="_blank">CLI</a>
-                    <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#server-deployment"
-                        class="transition-colors footer-link" target="_blank">Host Your Own</a>
-                    <a href="/privacy" class="transition-colors footer-link">Privacy Policy</a>
-                    <a href="https://github.com/piheta/seq.re/blob/main/LICENSE" class="transition-colors footer-link"
-                        target="_blank">License</a>
-                    {{if .ContactEmail}}
-                    <a href="mailto:{{.ContactEmail}}" class="transition-colors footer-link">Contact</a>
-                    {{end}}
-                </div>
+                <a href="https://github.com/piheta/seq.re" class="transition-colors footer-link"
+                    target="_blank">GitHub</a>
+                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#cli"
+                    class="transition-colors footer-link" target="_blank">CLI</a>
+                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#server-deployment"
+                    class="transition-colors footer-link" target="_blank">Host Your Own</a>
+                <a href="/privacy" class="transition-colors footer-link">Privacy Policy</a>
+                <a href="https://github.com/piheta/seq.re/blob/main/LICENSE" class="transition-colors footer-link"
+                    target="_blank">License</a>
+                {{if .ContactEmail}}
+                <a href="mailto:{{.ContactEmail}}" class="transition-colors footer-link">Contact</a>
+                {{end}}
                 {{if .Version}}
-                <span style="color: var(--darkreader-text-9ca3af);">{{.Version}}</span>
+                <span class="sm:ml-auto" style="color: var(--darkreader-text-9ca3af);">{{.Version}}</span>
                 {{end}}
             </div>
         </footer>
