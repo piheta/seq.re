@@ -1,27 +1,24 @@
 <div class="space-y-4">
     <div class="flex items-center gap-2 mb-4">
-        <svg class="w-5 h-5" style="color: var(--text-16a34a);" fill="none" stroke="currentColor"
+        <svg class="w-5 h-5 text-dr-green dark:text-dr-green-dark" fill="none" stroke="currentColor"
             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
             </path>
         </svg>
-        <h2 style="color: var(--text-111827);">Image Sharing</h2>
+        <h2 class="text-dr-text-heading dark:text-dr-text-heading-dark">Image Sharing</h2>
     </div>
 
     <label id="drop-zone"
-        class="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed rounded-md cursor-pointer transition-colors"
-        style="border-color: var(--border-d1d5db);" ondrop="handleDrop(event)"
-        ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)"
-        onmouseenter="this.style.borderColor='var(--text-16a34a)'"
-        onmouseleave="this.style.borderColor='var(--border-d1d5db)'">
+        class="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed rounded-md cursor-pointer transition-colors border-dr-border-secondary dark:border-dr-border-secondary-dark hover:border-dr-green dark:hover:border-dr-green-dark"
+        ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
         <div class="text-center">
-            <svg class="w-8 h-8 mx-auto mb-2" style="color: var(--text-9ca3af);" fill="none"
+            <svg class="w-8 h-8 mx-auto mb-2 text-dr-text-muted dark:text-dr-text-muted-dark" fill="none"
                 stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
-            <span style="color: var(--text-4b5563);" id="file-label">Click, drag, or paste image</span>
+            <span class="text-dr-text-gray dark:text-dr-text-gray-light" id="file-label">Click, drag, or paste image</span>
         </div>
         <input id="image-input" type="file" name="image" accept="image/*" class="hidden"
             onchange="handleFileSelect(this)" />
@@ -30,29 +27,25 @@
     <!-- Options -->
     <div class="space-y-2 mt-4">
         <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" name="mode" value="public" checked class="w-4 h-4 rounded-full"
-                style="accent-color: var(--text-16a34a);" onchange="resetImageUpload()" />
-            <span style="color: var(--text-374151);">Public</span>
+            <input type="radio" name="mode" value="public" checked class="w-4 h-4 rounded-full accent-dr-green dark:accent-dr-green-dark" onchange="resetImageUpload()" />
+            <span class="text-dr-text-body dark:text-dr-text-body-dark">Public</span>
         </label>
 
         <label class="flex items-center gap-2 cursor-pointer">
-            <input type="radio" name="mode" value="encrypted" class="w-4 h-4 rounded-full"
-                style="accent-color: var(--text-16a34a);" onchange="resetImageUpload()" />
-            <span style="color: var(--text-374151);">Encrypted</span>
+            <input type="radio" name="mode" value="encrypted" class="w-4 h-4 rounded-full accent-dr-green dark:accent-dr-green-dark" onchange="resetImageUpload()" />
+            <span class="text-dr-text-body dark:text-dr-text-body-dark">Encrypted</span>
         </label>
 
         <label class="flex items-center gap-2 cursor-pointer">
             <input id="image-onetime-checkbox" type="checkbox" name="self_destruct" value="true" checked
-                class="w-4 h-4 rounded" style="accent-color: var(--text-16a34a);"
-                onchange="resetImageUpload()" />
-            <span style="color: var(--text-374151);">One-time</span>
+                class="w-4 h-4 rounded accent-dr-green dark:accent-dr-green-dark" onchange="resetImageUpload()" />
+            <span class="text-dr-text-body dark:text-dr-text-body-dark">One-time</span>
         </label>
     </div>
 
     <!-- Image Preview -->
     <div id="image-preview" class="hidden mt-4">
-        <img id="preview-img" class="w-full max-h-80 object-contain rounded-md"
-            style="border: 1px solid var(--border-d1d5db);" alt="Preview">
+        <img id="preview-img" class="w-full max-h-80 object-contain rounded-md border border-dr-border-secondary dark:border-dr-border-secondary-dark" alt="Preview">
     </div>
 
     <div id="image-result"></div>
@@ -95,16 +88,14 @@
         event.preventDefault();
         event.stopPropagation();
         const dropZone = document.getElementById('drop-zone');
-        dropZone.style.borderColor = 'var(--text-16a34a)';
-        dropZone.style.backgroundColor = 'rgba(150,255,150,0.2)';
+        dropZone.classList.add('bg-green-50', 'dark:bg-green-950');
     }
 
     function handleDragLeave(event) {
         event.preventDefault();
         event.stopPropagation();
         const dropZone = document.getElementById('drop-zone');
-        dropZone.style.borderColor = 'var(--border-d1d5db)';
-        dropZone.style.backgroundColor = 'transparent';
+        dropZone.classList.remove('bg-green-50', 'dark:bg-green-950');
     }
 
     function handleDrop(event) {
@@ -112,8 +103,7 @@
         event.stopPropagation();
 
         const dropZone = document.getElementById('drop-zone');
-        dropZone.style.borderColor = 'var(--border-d1d5db)';
-        dropZone.style.backgroundColor = 'transparent';
+        dropZone.classList.remove('bg-green-50', 'dark:bg-green-950');
 
         const files = event.dataTransfer.files;
         if (files && files[0]) {
@@ -121,7 +111,7 @@
             if (files[0].type.startsWith('image/')) {
                 processFile(files[0]);
             } else {
-                document.getElementById('image-result').innerHTML = '<div class="mt-4" style="color: var(--text-ea580c);">Please drop an image file</div>';
+                document.getElementById('image-result').innerHTML = '<div class="mt-4 text-dr-orange dark:text-dr-orange-dark">Please drop an image file</div>';
             }
         }
     }
@@ -160,7 +150,7 @@
         const encrypted = mode === 'encrypted';
 
         try {
-            resultDiv.innerHTML = '<div class="mt-4" style="color: var(--text-4b5563);">Uploading...</div>';
+            resultDiv.innerHTML = '<div class="mt-4 text-dr-text-gray dark:text-dr-text-gray-light">Uploading...</div>';
 
             let imageURL;
 
@@ -219,7 +209,7 @@
             }
 
             // Display result
-            const warningText = onetime ? '<p class="text-sm mt-2" style="color: var(--text-9ca3af);">⚠️ This link will self-destruct after being viewed once.</p>' : '';
+            const warningText = onetime ? '<p class="text-sm mt-2 text-dr-text-muted dark:text-dr-text-muted-dark">⚠️ This link will self-destruct after being viewed once.</p>' : '';
 
             resultDiv.innerHTML = `
             <div class="flex gap-2 items-center mt-4">
@@ -227,18 +217,14 @@
                     type="text"
                     value="${imageURL}"
                     readonly
-                    class="flex-1 px-4 py-2 rounded-md"
-                    style="background-color: var(--bg-f5f5f5); border: 1px solid var(--border-d1d5db); color: var(--text-374151);"
+                    class="flex-1 px-4 py-2 rounded-md bg-dr-bg-gray dark:bg-dr-bg-gray-dark border border-dr-border-secondary dark:border-dr-border-secondary-dark text-dr-text-body dark:text-dr-text-body-dark"
                 />
                 <button
                     onclick="copyToClipboard('${imageURL}', 'copy-btn-image')"
                     id="copy-btn-image"
-                    class="p-2 rounded-md transition-colors"
-                    style="background-color: var(--bg-f3f4f6);"
-                    onmouseover="this.style.backgroundColor='var(--bg-f5f5f5)'"
-                    onmouseout="this.style.backgroundColor='var(--bg-f3f4f6)'"
+                    class="p-2 rounded-md transition-colors bg-dr-bg-subtle dark:bg-dr-bg-subtle-dark hover:bg-dr-bg-gray dark:hover:bg-dr-bg-gray-dark"
                 >
-                    <svg class="w-5 h-5" style="color: var(--text-4b5563);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    <svg class="w-5 h-5 text-dr-text-gray dark:text-dr-text-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                 </button>
             </div>
             ${warningText}
@@ -249,7 +235,7 @@
             fileInput.value = '';
             document.getElementById('file-label').textContent = 'Click, drag or paste image';
         } catch (error) {
-            resultDiv.innerHTML = `<div class="mt-4" style="color: var(--text-ea580c);">Error: ${error.message}</div>`;
+            resultDiv.innerHTML = `<div class="mt-4 text-dr-orange dark:text-dr-orange-dark">Error: ${error.message}</div>`;
         }
     }
 </script>

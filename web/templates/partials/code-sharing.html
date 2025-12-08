@@ -1,27 +1,21 @@
 <div class="space-y-4">
     <div class="flex items-center gap-2 mb-4">
-        <svg class="w-5 h-5" style="color: var(--text-ea580c);" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        <svg class="w-5 h-5 text-dr-orange dark:text-dr-orange-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
         </svg>
-        <h2 style="color: var(--text-111827);">Code Sharing</h2>
+        <h2 class="text-dr-text-heading dark:text-dr-text-heading-dark">Code Sharing</h2>
     </div>
 
     <form id="code-form" onsubmit="submitCode(event)">
         <textarea id="code-input" name="code" placeholder="Paste your code snippet" rows="10" required
-            class="w-full px-4 py-2 rounded-md focus:outline-none font-mono resize-none"
-            style="border: 2px solid var(--border-d1d5db); background-color: var(--bg-ffffff); color: var(--text-111827);"
-            onfocus="this.style.borderColor='var(--text-ea580c)'"
-            onblur="this.style.borderColor='var(--border-d1d5db)'"></textarea>
+            class="w-full px-4 py-2 rounded-md focus:outline-none font-mono resize-none border-2 border-dr-border-secondary dark:border-dr-border-secondary-dark bg-dr-bg dark:bg-dr-bg-dark text-dr-text-heading dark:text-dr-text-heading-dark focus:border-dr-orange dark:focus:border-dr-orange-dark"></textarea>
 
         <!-- Language Selection -->
         <div class="mt-4">
-            <label class="text-sm" style="color: var(--text-374151);">Language</label>
-            <select id="language-select" class="mt-1 w-full px-4 py-2 rounded-md focus:outline-none"
-                style="border: 2px solid var(--border-d1d5db); background-color: var(--bg-ffffff); color: var(--text-111827);"
-                onfocus="this.style.borderColor='var(--text-ea580c)'"
-                onblur="this.style.borderColor='var(--border-d1d5db)'">
+            <label class="text-sm text-dr-text-body dark:text-dr-text-body-dark">Language</label>
+            <select id="language-select" class="mt-1 w-full px-4 py-2 rounded-md focus:outline-none border-2 border-dr-border-secondary dark:border-dr-border-secondary-dark bg-dr-bg dark:bg-dr-bg-dark text-dr-text-heading dark:text-dr-text-heading-dark focus:border-dr-orange dark:focus:border-dr-orange-dark">
                 <option value="">Plain Text</option>
                 <option value="javascript">JavaScript</option>
                 <option value="python">Python</option>
@@ -49,27 +43,23 @@
         <!-- Options -->
         <div class="space-y-2 mt-4">
             <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="mode" value="public" checked class="w-4 h-4 rounded-full"
-                    style="accent-color: var(--text-ea580c);" />
-                <span style="color: var(--text-374151);">Public</span>
+                <input type="radio" name="mode" value="public" checked class="w-4 h-4 rounded-full accent-dr-orange dark:accent-dr-orange-dark" />
+                <span class="text-dr-text-body dark:text-dr-text-body-dark">Public</span>
             </label>
 
             <label class="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="mode" value="encrypted" class="w-4 h-4 rounded-full"
-                    style="accent-color: var(--text-ea580c);" />
-                <span style="color: var(--text-374151);">Encrypted</span>
+                <input type="radio" name="mode" value="encrypted" class="w-4 h-4 rounded-full accent-dr-orange dark:accent-dr-orange-dark" />
+                <span class="text-dr-text-body dark:text-dr-text-body-dark">Encrypted</span>
             </label>
 
             <label class="flex items-center gap-2 cursor-pointer">
                 <input id="code-onetime-checkbox" type="checkbox" name="self_destruct" value="true" checked
-                    class="w-4 h-4 rounded" style="accent-color: var(--text-ea580c);" />
-                <span style="color: var(--text-374151);">One-time view</span>
+                    class="w-4 h-4 rounded accent-dr-orange dark:accent-dr-orange-dark" />
+                <span class="text-dr-text-body dark:text-dr-text-body-dark">One-time view</span>
             </label>
         </div>
 
-        <button type="submit" class="w-full text-white py-2 rounded-md transition-colors mt-3"
-            style="background-color: var(--text-ea580c);" onmouseover="this.style.opacity='0.9'"
-            onmouseout="this.style.opacity='1'">
+        <button type="submit" class="w-full text-white py-2 rounded-md transition-colors mt-3 bg-dr-orange dark:bg-dr-orange-dark hover:opacity-90">
             Share Code
         </button>
     </form>
@@ -88,7 +78,7 @@
         const encrypted = mode === 'encrypted';
 
         const resultDiv = document.getElementById('code-result');
-        resultDiv.innerHTML = '<div style="color: var(--text-4b5563);">Creating paste...</div>';
+        resultDiv.innerHTML = '<div class="text-dr-text-gray dark:text-dr-text-gray-light">Creating paste...</div>';
 
         try {
             let pasteURL;
@@ -134,28 +124,24 @@
                 pasteURL = await response.json();
             }
 
-            const warningText = onetime ? '<p class="text-sm mt-2" style="color: var(--text-9ca3af);">⚠️ This link will self-destruct after being viewed once.</p>' : '';
+            const warningText = onetime ? '<p class="text-sm mt-2 text-dr-text-muted dark:text-dr-text-muted-dark">⚠️ This link will self-destruct after being viewed once.</p>' : '';
 
             resultDiv.innerHTML = `
             <div class="flex gap-2 items-center mt-4">
                     <input type="text" value="${pasteURL}" readonly
-                        class="flex-1 px-4 py-2 rounded-md"
-                        style="border: 1px solid var(--border-d1d5db); background-color: var(--bg-ffffff); color: var(--text-111827);" />
+                        class="flex-1 px-4 py-2 rounded-md border border-dr-border-secondary dark:border-dr-border-secondary-dark bg-dr-bg dark:bg-dr-bg-dark text-dr-text-heading dark:text-dr-text-heading-dark" />
                     <button onclick="copyToClipboard('${pasteURL}')"
-                        class="p-2 rounded-md transition-colors"
-                        style="background-color: var(--text-ea580c);" onmouseover="this.style.opacity='0.9'"
-                        onmouseover="this.style.opacity='0.9'"
-                        onmouseout="this.style.opacity='1'"
+                        class="p-2 rounded-md transition-colors bg-dr-orange dark:bg-dr-orange-dark hover:opacity-90"
                     >
-                        <svg class="w-5 h-5" style="color: var(--text-4b5563);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <svg class="w-5 h-5 text-dr-text-gray dark:text-dr-text-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                     </button>
             </div>
             ${warningText}
         `;
         } catch (error) {
             resultDiv.innerHTML = `
-            <div class="mt-4 p-4 rounded-md" style="background-color: var(--bg-faedda); border: 1px solid var(--border-d1d5db);">
-                <p class="text-sm" style="color: var(--text-ea580c);">Error: ${error.message}</p>
+            <div class="mt-4 p-4 rounded-md bg-dr-bg-cream dark:bg-dr-bg-cream-dark border border-dr-border-secondary dark:border-dr-border-secondary-dark">
+                <p class="text-sm text-dr-orange dark:text-dr-orange-dark">Error: ${error.message}</p>
             </div>
         `;
         }
