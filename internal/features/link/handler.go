@@ -15,13 +15,16 @@ import (
 type LinkHandler struct {
 	linkService      *LinkService
 	redirectTemplate *template.Template
+	resultTemplate   *template.Template
 }
 
 func NewLinkHandler(linkService *LinkService) *LinkHandler {
-	tmpl := template.Must(template.ParseFiles("web/templates/redirect.html"))
+	redirectTmpl := template.Must(template.ParseFiles("web/templates/redirect.html"))
+	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
 	return &LinkHandler{
 		linkService:      linkService,
-		redirectTemplate: tmpl,
+		redirectTemplate: redirectTmpl,
+		resultTemplate:   resultTmpl,
 	}
 }
 
@@ -91,6 +94,19 @@ func (h *LinkHandler) CreateLink(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	shortURL := fmt.Sprintf("%s%s/%s", config.Config.RedirectHost, config.Config.RedirectPort, link.Short)
+
+	// Check if this is an HTMX request (wants HTML response)
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"URL":      shortURL,
+			"ButtonID": "url",
+		}
+		if linkReq.OneTime {
+			data["Warning"] = "This link will self-destruct after being viewed once."
+		}
+		return h.resultTemplate.Execute(w, data)
+	}
 
 	return response.JSON(w, 201, shortURL)
 }

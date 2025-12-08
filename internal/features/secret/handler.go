@@ -15,13 +15,16 @@ import (
 type SecretHandler struct {
 	secretService        *SecretService
 	secretViewerTemplate *template.Template
+	resultTemplate       *template.Template
 }
 
 func NewSecretHandler(secretService *SecretService) *SecretHandler {
-	tmpl := template.Must(template.ParseFiles("web/templates/secret-viewer.html"))
+	viewerTmpl := template.Must(template.ParseFiles("web/templates/secret-viewer.html"))
+	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
 	return &SecretHandler{
 		secretService:        secretService,
-		secretViewerTemplate: tmpl,
+		secretViewerTemplate: viewerTmpl,
+		resultTemplate:       resultTmpl,
 	}
 }
 
@@ -52,6 +55,17 @@ func (h *SecretHandler) CreateSecret(w http.ResponseWriter, r *http.Request) err
 	}
 
 	secretURL := fmt.Sprintf("%s%s/s/%s", config.Config.RedirectHost, config.Config.RedirectPort, secret.Short)
+
+	// Check if this is an HTMX request (wants HTML response)
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"URL":      secretURL,
+			"ButtonID": "secret",
+			"Warning":  "This link will self-destruct after being viewed once.",
+		}
+		return h.resultTemplate.Execute(w, data)
+	}
 
 	return response.JSON(w, 201, secretURL)
 }

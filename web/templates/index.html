@@ -10,6 +10,7 @@
     <script src="/static/tailwind.config.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="/static/crypto.js"></script>
+    <script src="/static/app.js"></script>
     <style>
         body {
             color-scheme: light;
@@ -139,52 +140,7 @@
         </footer>
     </div>
 
-    <script>
-        // Dark mode toggle
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            const isDark = html.classList.toggle('dark');
-            localStorage.setItem('darkMode', isDark ? 'dark' : 'light');
-
-            // Toggle icons
-            document.getElementById('sun-icon').classList.toggle('hidden');
-            document.getElementById('moon-icon').classList.toggle('hidden');
-        }
-
-        // Initialize dark mode from localStorage
-        (function () {
-            const savedMode = localStorage.getItem('darkMode');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const shouldBeDark = savedMode === 'dark' || (!savedMode && prefersDark);
-
-            if (shouldBeDark) {
-                document.documentElement.classList.add('dark');
-                document.getElementById('sun-icon').classList.remove('hidden');
-                document.getElementById('moon-icon').classList.add('hidden');
-            }
-        })();
-
-        function setActiveTab(button) {
-            const buttons = document.querySelectorAll('.tab-button');
-            buttons.forEach(btn => {
-                btn.classList.remove('bg-dr-bg-subtle', 'dark:bg-dr-bg-subtle-dark', 'text-dr-text-heading', 'dark:text-dr-text-heading-dark', 'active-tab');
-                btn.classList.add('text-dr-text-gray', 'dark:text-dr-text-gray-light');
-            });
-
-            button.classList.remove('text-dr-text-gray', 'dark:text-dr-text-gray-light');
-            button.classList.add('bg-dr-bg-subtle', 'dark:bg-dr-bg-subtle-dark', 'text-dr-text-heading', 'dark:text-dr-text-heading-dark', 'active-tab');
-        }
-
-        function copyToClipboard(text, buttonId) {
-            navigator.clipboard.writeText(text);
-            const button = document.getElementById(buttonId);
-            const originalHTML = button.innerHTML;
-            button.innerHTML = '<svg class="w-5 h-5 text-dr-green dark:text-dr-green-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-            setTimeout(() => {
-                button.innerHTML = originalHTML;
-            }, 2000);
-        }
-    </script>
+    <!-- All common JS functions now in app.js -->
 </body>
 
 </html>

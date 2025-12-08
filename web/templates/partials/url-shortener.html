@@ -62,16 +62,15 @@
             let shortURL;
 
             if (encrypted) {
-                // Generate encryption key
                 const key = await generateKey();
-
-                // Encrypt the URL
                 const encryptedURL = await encrypt(url, key);
 
-                // Send encrypted URL to API
                 const response = await fetch('/api/links', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'HX-Request': 'true'
+                    },
                     body: JSON.stringify({
                         url: encryptedURL,
                         encrypted: true,
@@ -79,20 +78,25 @@
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to shorten URL');
+                if (!response.ok) throw new Error('Failed to shorten URL');
+
+                // Server returns HTML for HTMX requests
+                const html = await response.text();
+                resultDiv.innerHTML = html;
+
+                // Append key fragment to the input value
+                const input = resultDiv.querySelector('input');
+                if (input) {
+                    const keyFragment = await exportKey(key);
+                    input.value = input.value + '#' + keyFragment;
                 }
-
-                shortURL = await response.json();
-
-                // Append key fragment to URL
-                const keyFragment = await exportKey(key);
-                shortURL = shortURL + '#' + keyFragment;
             } else {
-                // Send plain URL to API
                 const response = await fetch('/api/links', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'HX-Request': 'true'
+                    },
                     body: JSON.stringify({
                         url: url,
                         encrypted: false,
@@ -100,34 +104,11 @@
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to shorten URL');
-                }
+                if (!response.ok) throw new Error('Failed to shorten URL');
 
-                shortURL = await response.json();
+                const html = await response.text();
+                resultDiv.innerHTML = html;
             }
-
-            // Display result
-            const warningText = onetime ? '<p class="text-sm mt-2 text-dr-text-muted dark:text-dr-text-muted-dark">⚠️ This link will self-destruct after being viewed once.</p>' : '';
-
-            resultDiv.innerHTML = `
-            <div class="flex gap-2 items-center mt-4">
-                <input
-                    type="text"
-                    value="${shortURL}"
-                    readonly
-                    class="flex-1 px-4 py-2 rounded-md bg-dr-bg-gray dark:bg-dr-bg-gray-dark border border-dr-border-secondary dark:border-dr-border-secondary-dark text-dr-text-body dark:text-dr-text-body-dark"
-                />
-                <button
-                    onclick="copyToClipboard('${shortURL}', 'copy-btn-url')"
-                    id="copy-btn-url"
-                    class="p-2 rounded-md transition-colors bg-dr-bg-subtle dark:bg-dr-bg-subtle-dark hover:bg-dr-bg-gray dark:hover:bg-dr-bg-gray-dark"
-                >
-                    <svg class="w-5 h-5 text-dr-text-gray dark:text-dr-text-gray-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                </button>
-            </div>
-            ${warningText}
-        `;
         } catch (error) {
             resultDiv.innerHTML = `<div class="mt-4 text-dr-orange dark:text-dr-orange-dark">Error: ${error.message}</div>`;
         }

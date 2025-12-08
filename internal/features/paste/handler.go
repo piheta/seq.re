@@ -15,13 +15,16 @@ import (
 type PasteHandler struct {
 	pasteService        *PasteService
 	pasteViewerTemplate *template.Template
+	resultTemplate      *template.Template
 }
 
 func NewPasteHandler(pasteService *PasteService) *PasteHandler {
-	tmpl := template.Must(template.ParseFiles("web/templates/paste-viewer.html"))
+	viewerTmpl := template.Must(template.ParseFiles("web/templates/paste-viewer.html"))
+	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
 	return &PasteHandler{
 		pasteService:        pasteService,
-		pasteViewerTemplate: tmpl,
+		pasteViewerTemplate: viewerTmpl,
+		resultTemplate:      resultTmpl,
 	}
 }
 
@@ -52,6 +55,19 @@ func (h *PasteHandler) CreatePaste(w http.ResponseWriter, r *http.Request) error
 	}
 
 	pasteURL := fmt.Sprintf("%s%s/p/%s", config.Config.RedirectHost, config.Config.RedirectPort, paste.Short)
+
+	// Check if this is an HTMX request (wants HTML response)
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"URL":      pasteURL,
+			"ButtonID": "code",
+		}
+		if req.OneTime {
+			data["Warning"] = "This link will self-destruct after being viewed once."
+		}
+		return h.resultTemplate.Execute(w, data)
+	}
 
 	return response.JSON(w, 201, pasteURL)
 }

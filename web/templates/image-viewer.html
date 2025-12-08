@@ -5,64 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading Image...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/tailwind.config.js"></script>
     <script src="/static/crypto.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background: #f9fafb;
-        }
-
-        .container {
-            text-align: center;
-            max-width: 90%;
-        }
-
-        .spinner {
-            border: 3px solid #e5e7eb;
-            border-top: 3px solid #10b981;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        .error {
-            color: #dc2626;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        #image-display {
-            display: none;
-            max-width: 100%;
-            max-height: 90vh;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-    </style>
+    <script src="/static/app.js"></script>
+    <link rel="stylesheet" href="/static/viewer-base.css">
 </head>
 
-<body>
-    <div class="container">
-        <div class="spinner"></div>
-        <div id="message">Decrypting image...</div>
-        <img id="image-display" alt="Decrypted image">
+<body class="viewer-container bg-dr-bg-page dark:bg-dr-bg-page-dark text-dr-text dark:text-dr-text-dark">
+    <div class="text-center max-w-[90%]">
+        <div class="viewer-spinner text-dr-green dark:text-dr-green-dark mx-auto mb-4"></div>
+        <div id="message" class="text-dr-text-gray dark:text-dr-text-gray-light">Decrypting image...</div>
+        <img id="image-display" alt="Decrypted image" class="hidden max-w-full max-h-[90vh] rounded-lg shadow-lg mt-4">
     </div>
 
     <script>
@@ -72,9 +26,10 @@
 
         // Start decryption immediately
         if (!hash) {
-            document.getElementById('message').textContent = 'Error: Encryption key not found in URL';
-            document.getElementById('message').className = 'error';
-            document.querySelector('.spinner').style.display = 'none';
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = 'Error: Encryption key not found in URL';
+            messageEl.className = 'text-dr-orange dark:text-dr-orange-dark max-w-md mx-auto';
+            document.querySelector('.viewer-spinner').style.display = 'none';
         } else {
             importKey(hash)
                 .then(key => {
@@ -89,17 +44,18 @@
                     // Display image
                     const img = document.getElementById('image-display');
                     img.src = url;
-                    img.style.display = 'block';
+                    img.classList.remove('hidden');
 
                     // Hide spinner and message
-                    document.querySelector('.spinner').style.display = 'none';
+                    document.querySelector('.viewer-spinner').style.display = 'none';
                     document.getElementById('message').style.display = 'none';
                 })
                 .catch(err => {
                     console.error('Decryption error:', err);
-                    document.getElementById('message').textContent = 'Failed to decrypt image. The link may be invalid or expired.';
-                    document.getElementById('message').className = 'error';
-                    document.querySelector('.spinner').style.display = 'none';
+                    const messageEl = document.getElementById('message');
+                    messageEl.textContent = 'Failed to decrypt image. The link may be invalid or expired.';
+                    messageEl.className = 'text-dr-orange dark:text-dr-orange-dark max-w-md mx-auto';
+                    document.querySelector('.viewer-spinner').style.display = 'none';
                 });
         }
     </script>

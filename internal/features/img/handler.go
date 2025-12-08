@@ -15,13 +15,16 @@ import (
 type ImageHandler struct {
 	imageService        *ImageService
 	imageViewerTemplate *template.Template
+	resultTemplate      *template.Template
 }
 
 func NewImageHandler(imageService *ImageService) *ImageHandler {
-	tmpl := template.Must(template.ParseFiles("web/templates/image-viewer.html"))
+	viewerTmpl := template.Must(template.ParseFiles("web/templates/image-viewer.html"))
+	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
 	return &ImageHandler{
 		imageService:        imageService,
-		imageViewerTemplate: tmpl,
+		imageViewerTemplate: viewerTmpl,
+		resultTemplate:      resultTmpl,
 	}
 }
 
@@ -73,6 +76,19 @@ func (h *ImageHandler) CreateImage(w http.ResponseWriter, r *http.Request) error
 	}
 
 	imageURL := fmt.Sprintf("%s%s/i/%s", config.Config.RedirectHost, config.Config.RedirectPort, image.Short)
+
+	// Check if this is an HTMX request (wants HTML response)
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"URL":      imageURL,
+			"ButtonID": "image",
+		}
+		if onetime {
+			data["Warning"] = "This link will self-destruct after being viewed once."
+		}
+		return h.resultTemplate.Execute(w, data)
+	}
 
 	return response.JSON(w, 201, imageURL)
 }
