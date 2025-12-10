@@ -1,6 +1,7 @@
 package img
 
 import (
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"io"
@@ -13,18 +14,27 @@ import (
 )
 
 type ImageHandler struct {
-	imageService        *ImageService
-	imageViewerTemplate *template.Template
-	resultTemplate      *template.Template
+	imageService          *ImageService
+	contentViewerTemplate *template.Template
+	resultTemplate        *template.Template
+	onetimeTemplate       *template.Template
+	onetimeRevealTemplate *template.Template
+	onetimeErrorTemplate  *template.Template
 }
 
 func NewImageHandler(imageService *ImageService) *ImageHandler {
-	viewerTmpl := template.Must(template.ParseFiles("web/templates/image-viewer.html"))
+	contentViewerTmpl := template.Must(template.ParseFiles("web/templates/content-viewer.html"))
 	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
+	onetimeTmpl := template.Must(template.ParseFiles("web/templates/onetime.html"))
+	onetimeRevealTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-revealed.html"))
+	onetimeErrorTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-error.html"))
 	return &ImageHandler{
-		imageService:        imageService,
-		imageViewerTemplate: viewerTmpl,
-		resultTemplate:      resultTmpl,
+		imageService:          imageService,
+		contentViewerTemplate: contentViewerTmpl,
+		resultTemplate:        resultTmpl,
+		onetimeTemplate:       onetimeTmpl,
+		onetimeRevealTemplate: onetimeRevealTmpl,
+		onetimeErrorTemplate:  onetimeErrorTmpl,
 	}
 }
 
@@ -109,15 +119,45 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return apierr.NewError(422, "validation", "Invalid image code")
 	}
 
+	// Check if image exists without consuming it (for one-time flow)
+	image, err := h.imageService.CheckImageExists(short)
+	if err != nil {
+		return apierr.NewError(404, "not_found", "Image not found")
+	}
+
+	// For one-time images with browser, show confirmation page
+	if image.OneTime && s.IsBrowser(r) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"ID":   short,
+			"Type": "image",
+		}
+		return h.onetimeTemplate.Execute(w, data)
+	}
+
+	// Consume the image (will delete if OneTime)
 	image, imageData, err := h.imageService.GetImage(short)
 	if err != nil {
 		return apierr.NewError(404, "not_found", "Image not found")
 	}
 
-	if s.IsBrowser(r) && image.Encrypted {
+	// For browser requests, use the unified content viewer template
+	if s.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := ImageResponse{Data: string(imageData)}
-		return h.imageViewerTemplate.Execute(w, data)
+		// For unencrypted images, base64 encode for safe embedding in HTML
+		imageDataStr := string(imageData)
+		if !image.Encrypted {
+			imageDataStr = base64.StdEncoding.EncodeToString(imageData)
+		}
+		data := map[string]any{
+			"Type":      "image",
+			"Data":      imageDataStr,
+			"Encrypted": image.Encrypted,
+			"Metadata": map[string]string{
+				"ContentType": image.ContentType,
+			},
+		}
+		return h.contentViewerTemplate.Execute(w, data)
 	}
 
 	if image.Encrypted {
@@ -129,4 +169,54 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(imageData)
 	return nil
+}
+
+// RevealOneTimeImage consumes the one-time image and returns the content.
+// @Summary Reveal one-time image
+// @Description Consumes the one-time image and returns the content (one-time use only)
+// @Tags image
+// @Param short path string true "Short code (6 characters)"
+// @Success 200 {string} string "Image content HTML partial"
+// @Failure 404
+// @Failure 422
+// @Router /api/onetime/image/{short} [post]
+func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request) error {
+	short := r.PathValue("short")
+
+	if len(short) != 6 {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"Error": "Invalid image code",
+		}
+		return h.onetimeErrorTemplate.Execute(w, data)
+	}
+
+	// Consume the image (retrieve and delete)
+	image, imageData, err := h.imageService.GetImage(short)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"Error": "This one-time link has already been viewed or does not exist.",
+		}
+		return h.onetimeErrorTemplate.Execute(w, data)
+	}
+
+	// Return the revealed content
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// For unencrypted images, base64 encode for safe embedding in HTML
+	imageDataStr := string(imageData)
+	if !image.Encrypted {
+		imageDataStr = base64.StdEncoding.EncodeToString(imageData)
+	}
+
+	data := map[string]any{
+		"Type":      "image",
+		"Data":      imageDataStr,
+		"Encrypted": image.Encrypted,
+		"Metadata": map[string]string{
+			"ContentType": image.ContentType,
+		},
+	}
+	return h.onetimeRevealTemplate.Execute(w, data)
 }

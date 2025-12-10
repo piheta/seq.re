@@ -93,15 +93,19 @@ func main() {
 
 	mux.Handle("POST /api/links", mw.Public(linkHandler.CreateLink))
 	mux.Handle("GET /api/links/{short}", localmw.RateLimit(2, 5, mw.Public(linkHandler.GetLinkByShort)))
+	mux.Handle("POST /api/onetime/link/{short}", localmw.RateLimit(2, 5, mw.Public(linkHandler.RevealOneTimeLink)))
 
 	mux.Handle("POST /api/secrets", mw.Public(secretHandler.CreateSecret))
 	mux.Handle("GET /s/{short}", localmw.RateLimit(2, 5, mw.Public(secretHandler.GetSecretByShort)))
+	mux.Handle("POST /api/onetime/{short}", localmw.RateLimit(2, 5, mw.Public(secretHandler.RevealOneTimeSecret)))
 
 	mux.Handle("POST /api/images", mw.Public(imageHandler.CreateImage))
 	mux.Handle("GET /i/{short}", localmw.RateLimit(2, 5, mw.Public(imageHandler.GetImageByShort)))
+	mux.Handle("POST /api/onetime/image/{short}", localmw.RateLimit(2, 5, mw.Public(imageHandler.RevealOneTimeImage)))
 
 	mux.Handle("POST /api/pastes", mw.Public(pasteHandler.CreatePaste))
 	mux.Handle("GET /p/{short}", localmw.RateLimit(2, 5, mw.Public(pasteHandler.GetPasteByShort)))
+	mux.Handle("POST /api/onetime/paste/{short}", localmw.RateLimit(2, 5, mw.Public(pasteHandler.RevealOneTimePaste)))
 
 	// Apply rate limiting to redirect endpoint: 2 requests per second with burst of 5
 	// This must be last to not conflict with other routes

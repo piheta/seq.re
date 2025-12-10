@@ -14,18 +14,27 @@ import (
 )
 
 type LinkHandler struct {
-	linkService      *LinkService
-	redirectTemplate *template.Template
-	resultTemplate   *template.Template
+	linkService           *LinkService
+	redirectTemplate      *template.Template
+	resultTemplate        *template.Template
+	onetimeTemplate       *template.Template
+	onetimeRevealTemplate *template.Template
+	onetimeErrorTemplate  *template.Template
 }
 
 func NewLinkHandler(linkService *LinkService) *LinkHandler {
 	redirectTmpl := template.Must(template.ParseFiles("web/templates/redirect.html"))
 	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
+	onetimeTmpl := template.Must(template.ParseFiles("web/templates/onetime.html"))
+	onetimeRevealTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-revealed.html"))
+	onetimeErrorTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-error.html"))
 	return &LinkHandler{
-		linkService:      linkService,
-		redirectTemplate: redirectTmpl,
-		resultTemplate:   resultTmpl,
+		linkService:           linkService,
+		redirectTemplate:      redirectTmpl,
+		resultTemplate:        resultTmpl,
+		onetimeTemplate:       onetimeTmpl,
+		onetimeRevealTemplate: onetimeRevealTmpl,
+		onetimeErrorTemplate:  onetimeErrorTmpl,
 	}
 }
 
@@ -46,7 +55,24 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 		return apierr.NewError(422, "validation", "Invalid shorturl code")
 	}
 
-	link, err := h.linkService.GetLinkByShort(short)
+	// Check if link exists without consuming it (for one-time flow)
+	link, err := h.linkService.CheckLinkExists(short)
+	if err != nil {
+		return apierr.NewError(404, "url", "url not found")
+	}
+
+	// For one-time links with browser, show confirmation page
+	if link.OneTime && s.IsBrowser(r) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"ID":   short,
+			"Type": "url",
+		}
+		return h.onetimeTemplate.Execute(w, data)
+	}
+
+	// Consume the link (will delete if OneTime)
+	link, err = h.linkService.GetLinkByShort(short)
 	if err != nil {
 		return apierr.NewError(404, "url", "url not found")
 	}
@@ -142,4 +168,43 @@ func (h *LinkHandler) GetLinkByShort(w http.ResponseWriter, r *http.Request) err
 	}
 
 	return response.JSON(w, 200, linkResp)
+}
+
+// RevealOneTimeLink consumes the one-time link and returns the content for redirect.
+// @Summary Reveal one-time link
+// @Description Consumes the one-time link and returns the URL for redirect (one-time use only)
+// @Tags link
+// @Param short path string true "Short code (6 characters)"
+// @Success 200 {string} string "Link content HTML partial"
+// @Failure 404
+// @Failure 422
+// @Router /api/onetime/link/{short} [post]
+func (h *LinkHandler) RevealOneTimeLink(w http.ResponseWriter, r *http.Request) error {
+	short := r.PathValue("short")
+
+	if len(short) != 6 {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"Error": "Invalid link code",
+		}
+		return h.onetimeErrorTemplate.Execute(w, data)
+	}
+
+	// Consume the link (retrieve and delete)
+	link, err := h.linkService.GetLinkByShort(short)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"Error": "This one-time link has already been viewed or does not exist.",
+		}
+		return h.onetimeErrorTemplate.Execute(w, data)
+	}
+
+	// Return the revealed content
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data := map[string]any{
+		"Type": "url",
+		"Data": link.URL,
+	}
+	return h.onetimeRevealTemplate.Execute(w, data)
 }
