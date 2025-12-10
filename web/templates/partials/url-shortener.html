@@ -10,7 +10,8 @@
     </div>
 
     <form id="url-form" onsubmit="submitURL(event)">
-        <input id="url-input" type="url" name="url" placeholder="Enter your long URL" required
+        <label for="url-input" class="sr-only">URL to shorten</label>
+        <input id="url-input" type="text" name="url" placeholder="Enter your long URL" required
             class="w-full px-4 py-2 rounded-md focus:outline-none border-2 border-dr-border-secondary dark:border-dr-border-secondary-dark bg-dr-bg dark:bg-dr-bg-dark text-dr-text-heading dark:text-dr-text-heading-dark focus:border-dr-blue dark:focus:border-dr-blue-light" />
 
         <!-- Options -->

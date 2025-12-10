@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 
 	"github.com/piheta/apicore/apierr"
 	"github.com/piheta/apicore/response"
@@ -83,6 +84,9 @@ func (h *LinkHandler) CreateLink(w http.ResponseWriter, r *http.Request) error {
 			return apierr.NewError(400, "validation", "URL is required")
 		}
 	} else {
+		if !strings.Contains(linkReq.URL, "://") {
+			linkReq.URL = "https://" + linkReq.URL
+		}
 		if err := s.Validate.Struct(&linkReq); err != nil {
 			return err
 		}

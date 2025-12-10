@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"reflect"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -56,6 +57,10 @@ func validateURL(rawURL string) error {
 		return errors.New("URL must have a valid hostname")
 	}
 
+	if hostname == "localhost" || hostname == "localhost.localdomain" {
+		return errors.New("localhost URLs are not allowed")
+	}
+
 	if ip := net.ParseIP(hostname); ip != nil {
 		if isInternalIP(ip) {
 			return fmt.Errorf("URL points to internal/private IP address: %s", ip.String())
@@ -63,17 +68,9 @@ func validateURL(rawURL string) error {
 		return nil
 	}
 
-	ips, dnsErr := net.LookupIP(hostname)
-	if dnsErr != nil {
-		// If DNS lookup fails, we allow it (network might be down, or domain might not exist yet)
-		// The important check is blocking direct IP addresses and resolved IPs
-		return nil // nolint:nilerr // Intentionally allowing URLs when DNS resolution fails
-	}
-
-	for _, ip := range ips {
-		if isInternalIP(ip) {
-			return fmt.Errorf("URL points to internal/private IP address: %s", ip.String())
-		}
+	lastDot := strings.LastIndex(hostname, ".")
+	if lastDot == -1 || lastDot == len(hostname)-1 {
+		return errors.New("invalid domain: must include a TLD (e.g., .com, .no)")
 	}
 
 	return nil

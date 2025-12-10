@@ -9,12 +9,13 @@
     </div>
 
     <form id="code-form" onsubmit="submitCode(event)">
+        <label for="code-input" class="sr-only">Code snippet</label>
         <textarea id="code-input" name="code" placeholder="Paste your code snippet" rows="10" required
             class="w-full px-4 py-2 rounded-md focus:outline-none font-mono resize-none border-2 border-dr-border-secondary dark:border-dr-border-secondary-dark bg-dr-bg dark:bg-dr-bg-dark text-dr-text-heading dark:text-dr-text-heading-dark focus:border-dr-orange dark:focus:border-dr-orange-dark"></textarea>
 
         <!-- Language Selection -->
         <div class="mt-4">
-            <label class="text-sm text-dr-text-body dark:text-dr-text-body-dark">Language</label>
+            <label for="language-select" class="text-sm text-dr-text-body dark:text-dr-text-body-dark">Language</label>
             <select id="language-select" class="mt-1 w-full px-4 py-2 rounded-md focus:outline-none border-2 border-dr-border-secondary dark:border-dr-border-secondary-dark bg-dr-bg dark:bg-dr-bg-dark text-dr-text-heading dark:text-dr-text-heading-dark focus:border-dr-orange dark:focus:border-dr-orange-dark">
                 <option value="">Plain Text</option>
                 <option value="javascript">JavaScript</option>
