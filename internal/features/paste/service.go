@@ -56,3 +56,8 @@ func (s *PasteService) GetPaste(short string) (*Paste, error) {
 func (s *PasteService) DeletePaste(short string) error {
 	return s.pasteRepo.Delete(short)
 }
+
+// CheckPasteExists checks if a paste exists without consuming it (for one-time flow)
+func (s *PasteService) CheckPasteExists(short string) (*Paste, error) {
+	return s.pasteRepo.GetByShort(short)
+}

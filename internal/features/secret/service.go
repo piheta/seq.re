@@ -49,3 +49,11 @@ func (s *SecretService) GetSecret(short string) (*Secret, error) {
 func (s *SecretService) DeleteSecret(short string) error {
 	return s.secretRepo.Delete(short)
 }
+
+func (s *SecretService) CheckSecretExists(short string) (bool, error) {
+	_, err := s.secretRepo.GetByShort(short)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}

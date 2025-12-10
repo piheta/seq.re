@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Content - seq.re</title>
+    <link rel="icon" type="image/webp" href="/static/favicon.webp">
+    <link rel="stylesheet" href="/static/tailwind.min.css">
+    <script src="/static/crypto.js"></script>
+    <script src="/static/app.js"></script>
+    <style>
+        body {
+            color-scheme: light;
+            background-image: radial-gradient(#ffffff 15%, transparent 0);
+            background-size: 30px 30px;
+        }
+
+        .dark body {
+            color-scheme: dark !important;
+            background-image: radial-gradient(#111415 15%, transparent 0);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-dr-bg-page dark:bg-dr-bg-page-dark py-8 px-4">
+    <div class="max-w-2xl mx-auto">
+        <header class="mb-8 flex items-center justify-between">
+            <a href="/" class="text-dr-text-heading dark:text-dr-text-heading-dark text-4xl hover:opacity-80 transition-opacity">seq.re</a>
+            <button
+                onclick="toggleDarkMode()"
+                class="p-2 rounded-md bg-dr-bg dark:bg-dr-bg-dark shadow-sm hover:bg-dr-bg-gray dark:hover:bg-dr-bg-gray-dark transition-colors"
+                aria-label="Toggle dark mode"
+                id="dark-mode-toggle"
+            >
+                <svg id="moon-icon" class="w-5 h-5 text-dr-indigo dark:text-dr-indigo-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <svg id="sun-icon" class="w-5 h-5 text-dr-orange dark:text-dr-orange-dark hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            </button>
+        </header>
+
+        <div class="bg-dr-bg dark:bg-dr-bg-dark rounded-lg shadow-sm p-6 md:p-8" id="contentArea">
+            <div class="space-y-6">
+                {{if eq .Type "code"}}
+                <div class="space-y-4">
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-gray-100 text-sm"><code id="decrypted-content">{{if .Encrypted}}Loading...{{else}}{{.Data}}{{end}}</code></pre>
+                    </div>
+                    {{if .Metadata.Language}}
+                    <p class="text-dr-text-gray dark:text-dr-text-gray-light">Language: {{.Metadata.Language}}</p>
+                    {{end}}
+                    <button onclick="copyDecryptedContent()" id="copyCodeBtn"
+                        class="{{if .Encrypted}}hidden {{end}}px-4 py-2 bg-dr-orange dark:bg-dr-orange-dark hover:opacity-90 text-white rounded-md transition-colors">
+                        Copy Code
+                    </button>
+                </div>
+                {{else if eq .Type "image"}}
+                <div class="space-y-4">
+                    <div id="decrypted-content" class="flex items-center justify-center text-dr-text-gray dark:text-dr-text-gray-light">
+                        Loading image...
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-6 border-t border-dr-border dark:border-dr-border-dark">
+            <div class="flex flex-wrap items-center gap-4 text-sm text-dr-text-gray dark:text-dr-text-gray-light">
+                <a href="https://github.com/piheta/seq.re"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
+                    target="_blank">GitHub</a>
+                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#cli"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
+                    target="_blank">CLI</a>
+                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#server-deployment"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
+                    target="_blank">Host Your Own</a>
+                <a href="/privacy"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark">Privacy
+                    Policy</a>
+                <a href="https://github.com/piheta/seq.re/blob/main/LICENSE"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
+                    target="_blank">License</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let decryptedData = '';
+        const contentType = "{{.Type}}";
+        const encryptedData = "{{.Data}}";
+        const isEncrypted = {{.Encrypted}};
+        const imageMimeType = "{{if .Metadata.ContentType}}{{.Metadata.ContentType}}{{else}}image/png{{end}}";
+
+        function copyDecryptedContent() {
+            if (decryptedData) {
+                copyToClipboard(decryptedData, 'copyCodeBtn');
+            }
+        }
+
+        // Helper to convert base64 to blob
+        function base64ToBlob(base64, mimeType) {
+            const byteChars = atob(base64);
+            const byteNumbers = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) {
+                byteNumbers[i] = byteChars.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: mimeType });
+        }
+
+        (async function () {
+            const key = location.hash.slice(1);
+            const contentEl = document.getElementById('decrypted-content');
+
+            // If not encrypted, content is already displayed for code
+            if (!isEncrypted && contentType === 'code') {
+                decryptedData = encryptedData;
+                return;
+            }
+
+            // Need to decrypt or process
+            try {
+                if (isEncrypted) {
+                    if (!key) {
+                        contentEl.textContent = 'Error: Encryption key not found in URL';
+                        return;
+                    }
+
+                    if (contentType === 'image') {
+                        const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+                        const cryptoKey = await importKey(key);
+                        const decryptedBytes = await decryptFile(encryptedBytes, cryptoKey);
+                        const blob = new Blob([decryptedBytes], { type: imageMimeType });
+                        const blobUrl = URL.createObjectURL(blob);
+
+                        const img = document.createElement('img');
+                        img.src = blobUrl;
+                        img.alt = 'Shared image';
+                        img.className = 'max-w-full max-h-[80vh] rounded shadow-lg';
+                        img.onload = () => URL.revokeObjectURL(blobUrl);
+                        contentEl.innerHTML = '';
+                        contentEl.appendChild(img);
+                    } else {
+                        const cryptoKey = await importKey(key);
+                        decryptedData = await decrypt(encryptedData, cryptoKey);
+                        contentEl.textContent = decryptedData;
+                        document.getElementById('copyCodeBtn').classList.remove('hidden');
+                    }
+                } else if (contentType === 'image') {
+                    // Unencrypted image - base64 decode
+                    const blob = base64ToBlob(encryptedData, imageMimeType);
+                    const blobUrl = URL.createObjectURL(blob);
+
+                    const img = document.createElement('img');
+                    img.src = blobUrl;
+                    img.alt = 'Shared image';
+                    img.className = 'max-w-full max-h-[80vh] rounded shadow-lg';
+                    img.onload = () => URL.revokeObjectURL(blobUrl);
+                    contentEl.innerHTML = '';
+                    contentEl.appendChild(img);
+                }
+            } catch (err) {
+                console.error('Error loading content:', err);
+                contentEl.textContent = 'Failed to load content.';
+            }
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,153 @@
+<div class="space-y-6">
+    <div class="flex items-center gap-3 pb-4 border-b border-dr-border dark:border-dr-border-dark">
+        <div class="bg-green-100 dark:bg-green-900/30 p-2 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="#16a34a" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
+        <div>
+            <h2 class="text-dr-text-heading dark:text-dr-text-heading-dark text-xl">Content Retrieved</h2>
+            <p class="text-dr-text-gray dark:text-dr-text-gray-light text-sm">This link has been consumed and is no
+                longer accessible</p>
+        </div>
+    </div>
+
+
+    {{if eq .Type "secret"}}
+    <div class="space-y-4">
+        <div class="bg-dr-bg-gray dark:bg-dr-bg-gray-dark rounded-lg p-4">
+            <p id="decrypted-content"
+                class="text-dr-text-heading dark:text-dr-text-heading-dark whitespace-pre-wrap break-words text-dr-text-gray dark:text-dr-text-gray-light">
+                Decrypting...</p>
+        </div>
+        <button onclick="copyDecryptedContent()" id="copySecretBtn"
+            class="hidden px-4 py-2 bg-dr-purple dark:bg-dr-purple-dark hover:opacity-90 text-white rounded-md transition-colors">
+            Copy to Clipboard
+        </button>
+    </div>
+    {{else if eq .Type "code"}}
+    <div class="space-y-4">
+        <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+            <pre class="text-gray-100 text-sm"><code id="decrypted-content">Decrypting...</code></pre>
+        </div>
+        {{if .Metadata.Language}}
+        <p class="text-dr-text-gray dark:text-dr-text-gray-light">Language: {{.Metadata.Language}}</p>
+        {{end}}
+        <button onclick="copyDecryptedContent()" id="copyCodeBtn"
+            class="hidden px-4 py-2 bg-dr-orange dark:bg-dr-orange-dark hover:opacity-90 text-white rounded-md transition-colors">
+            Copy Code
+        </button>
+    </div>
+    {{else if eq .Type "url"}}
+    <div class="space-y-4">
+        <div class="bg-dr-bg-gray dark:bg-dr-bg-gray-dark rounded-lg p-4 text-center">
+            <p id="decrypted-content" class="text-dr-text-gray dark:text-dr-text-gray-light">
+                Decrypting and redirecting...
+            </p>
+        </div>
+    </div>
+    {{else if eq .Type "image"}}
+    <div class="space-y-4">
+        <div id="decrypted-content" class="flex items-center justify-center text-dr-text-gray dark:text-dr-text-gray-light">
+            Loading image...
+        </div>
+    </div>
+    {{end}}
+
+    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+        <p class="text-yellow-800 dark:text-yellow-200 text-sm">
+            <strong>Important:</strong> Save this content now. This page cannot be accessed again.
+        </p>
+    </div>
+</div>
+
+<script>
+    // Store decrypted content for copy function
+    let decryptedData = '';
+    const contentType = "{{.Type}}";
+    const encryptedData = "{{.Data}}";
+    const imageMimeType = "{{if .Metadata.ContentType}}{{.Metadata.ContentType}}{{else}}image/png{{end}}";
+
+    function copyDecryptedContent() {
+        if (decryptedData) {
+            const btnId = contentType === 'secret' ? 'copySecretBtn' :
+                contentType === 'code' ? 'copyCodeBtn' : 'copyUrlBtn';
+            copyToClipboard(decryptedData, btnId);
+        }
+    }
+
+    // Helper to convert base64 to blob
+    function base64ToBlob(base64, mimeType) {
+        const byteChars = atob(base64);
+        const byteNumbers = new Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) {
+            byteNumbers[i] = byteChars.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        return new Blob([byteArray], { type: mimeType });
+    }
+
+    // Display content - decrypt if encrypted, otherwise show directly
+    (async function () {
+        const key = window.onetimeEncryptionKey;
+        const contentEl = document.getElementById('decrypted-content');
+        const isEncrypted = key && key.length > 0;
+
+        try {
+            // If encrypted, decrypt first; otherwise use raw data
+            if (isEncrypted) {
+                const cryptoKey = await importKey(key);
+                decryptedData = await decrypt(encryptedData, cryptoKey);
+            } else {
+                decryptedData = encryptedData; // Not actually encrypted (but base64 for images)
+            }
+
+            if (contentType === 'url') {
+                // Auto-redirect for URLs
+                contentEl.textContent = 'Redirecting to: ' + decryptedData;
+                setTimeout(() => {
+                    window.location.href = decryptedData;
+                }, 500);
+                return; // Don't show copy button for URLs
+            } else if (contentType === 'image') {
+                // For images, handle differently based on encryption
+                let blob;
+                if (isEncrypted) {
+                    // Encrypted: decode base64 to bytes, then decrypt using decryptFile
+                    const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+                    const cryptoKey = await importKey(key);
+                    const decryptedBytes = await decryptFile(encryptedBytes, cryptoKey);
+                    blob = new Blob([decryptedBytes], { type: imageMimeType });
+                } else {
+                    // Unencrypted: just decode base64 to blob
+                    blob = base64ToBlob(encryptedData, imageMimeType);
+                }
+
+                const blobUrl = URL.createObjectURL(blob);
+                const img = document.createElement('img');
+                img.src = blobUrl;
+                img.alt = 'Shared image';
+                img.className = 'max-w-full max-h-[80vh] rounded shadow-lg';
+                img.onload = () => URL.revokeObjectURL(blobUrl); // Clean up
+
+                contentEl.innerHTML = '';
+                contentEl.appendChild(img);
+                return; // Images don't have copy button
+            } else {
+                contentEl.textContent = decryptedData;
+                contentEl.className = 'text-dr-text-heading dark:text-dr-text-heading-dark whitespace-pre-wrap break-words';
+            }
+
+            // Show the copy button
+            const copyBtn = document.querySelector('[id^="copy"]');
+            if (copyBtn) {
+                copyBtn.classList.remove('hidden');
+            }
+        } catch (err) {
+            console.error('Error displaying content:', err);
+            contentEl.textContent = 'Failed to load content. The link may be invalid.';
+            contentEl.className += ' text-dr-orange dark:text-dr-orange-dark';
+        }
+    })();
+</script>

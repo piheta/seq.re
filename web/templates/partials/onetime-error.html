@@ -1,0 +1,18 @@
+<div class="text-center space-y-6">
+    <div class="flex justify-center">
+        <div class="bg-red-100 dark:bg-red-900/30 p-4 rounded-full">
+            <svg class="w-12 h-12 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
+    </div>
+
+    <div class="space-y-2">
+        <h1 class="text-dr-text-heading dark:text-dr-text-heading-dark text-2xl">Unable to Retrieve Content</h1>
+        <p class="text-dr-text-gray dark:text-dr-text-gray-light">{{.Error}}</p>
+    </div>
+
+    <a href="/" class="inline-block px-6 py-3 bg-dr-blue dark:bg-dr-blue-light hover:opacity-90 text-white rounded-md transition-colors">
+        Go to Homepage
+    </a>
+</div>
