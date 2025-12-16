@@ -58,6 +58,8 @@ func main() {
 	imageRepo := img.NewImageRepo(config.DB)
 	pasteRepo := paste.NewPasteRepo(config.DB)
 
+	templateService := shared.NewTemplateService()
+
 	ipService := ip.NewIPService()
 	linkService := link.NewLinkService(linkRepo)
 	secretService := secret.NewSecretService(secretRepo)
@@ -67,12 +69,12 @@ func main() {
 	imageService.StartCleanupWorker(1 * time.Hour)
 
 	ipHandler := ip.NewIPHandler(ipService)
-	linkHandler := link.NewLinkHandler(linkService)
-	secretHandler := secret.NewSecretHandler(secretService)
-	imageHandler := img.NewImageHandler(imageService)
-	pasteHandler := paste.NewPasteHandler(pasteService)
+	linkHandler := link.NewLinkHandler(linkService, templateService)
+	secretHandler := secret.NewSecretHandler(secretService, templateService)
+	imageHandler := img.NewImageHandler(imageService, templateService)
+	pasteHandler := paste.NewPasteHandler(pasteService, templateService)
 	seqreHandler := seqre.NewSeqreHandler(version, commit, date)
-	webHandler := web.NewWebHandler(version)
+	webHandler := web.NewWebHandler(templateService, version)
 
 	// Static files
 	fs := http.FileServer(http.Dir("web/static"))

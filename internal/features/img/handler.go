@@ -3,7 +3,6 @@ package img
 import (
 	"encoding/base64"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 
@@ -14,27 +13,14 @@ import (
 )
 
 type ImageHandler struct {
-	imageService          *ImageService
-	contentViewerTemplate *template.Template
-	resultTemplate        *template.Template
-	onetimeTemplate       *template.Template
-	onetimeRevealTemplate *template.Template
-	onetimeErrorTemplate  *template.Template
+	imageService    *ImageService
+	templateService *s.TemplateService
 }
 
-func NewImageHandler(imageService *ImageService) *ImageHandler {
-	contentViewerTmpl := template.Must(template.ParseFiles("web/templates/content-viewer.html"))
-	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
-	onetimeTmpl := template.Must(template.ParseFiles("web/templates/onetime.html"))
-	onetimeRevealTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-revealed.html"))
-	onetimeErrorTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-error.html"))
+func NewImageHandler(imageService *ImageService, templateService *s.TemplateService) *ImageHandler {
 	return &ImageHandler{
-		imageService:          imageService,
-		contentViewerTemplate: contentViewerTmpl,
-		resultTemplate:        resultTmpl,
-		onetimeTemplate:       onetimeTmpl,
-		onetimeRevealTemplate: onetimeRevealTmpl,
-		onetimeErrorTemplate:  onetimeErrorTmpl,
+		imageService:    imageService,
+		templateService: templateService,
 	}
 }
 
@@ -97,7 +83,7 @@ func (h *ImageHandler) CreateImage(w http.ResponseWriter, r *http.Request) error
 		if onetime {
 			data["Warning"] = "This link will self-destruct after being viewed once."
 		}
-		return h.resultTemplate.Execute(w, data)
+		return h.templateService.RenderResult(w, data)
 	}
 
 	return response.JSON(w, 201, imageURL)
@@ -132,7 +118,7 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 			"ID":   short,
 			"Type": "image",
 		}
-		return h.onetimeTemplate.Execute(w, data)
+		return h.templateService.RenderOnetime(w, data)
 	}
 
 	// Consume the image (will delete if OneTime)
@@ -157,7 +143,7 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 				"ContentType": image.ContentType,
 			},
 		}
-		return h.contentViewerTemplate.Execute(w, data)
+		return h.templateService.RenderContentViewer(w, data)
 	}
 
 	if image.Encrypted {
@@ -188,7 +174,7 @@ func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request
 		data := map[string]string{
 			"Error": "Invalid image code",
 		}
-		return h.onetimeErrorTemplate.Execute(w, data)
+		return h.templateService.RenderOnetimeError(w, data)
 	}
 
 	// Consume the image (retrieve and delete)
@@ -198,7 +184,7 @@ func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request
 		data := map[string]string{
 			"Error": "This one-time link has already been viewed or does not exist.",
 		}
-		return h.onetimeErrorTemplate.Execute(w, data)
+		return h.templateService.RenderOnetimeError(w, data)
 	}
 
 	// Return the revealed content
@@ -218,5 +204,5 @@ func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request
 			"ContentType": image.ContentType,
 		},
 	}
-	return h.onetimeRevealTemplate.Execute(w, data)
+	return h.templateService.RenderOnetimeReveal(w, data)
 }

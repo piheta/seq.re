@@ -3,7 +3,6 @@ package secret
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net/http"
 
 	"github.com/piheta/apicore/apierr"
@@ -13,24 +12,14 @@ import (
 )
 
 type SecretHandler struct {
-	secretService         *SecretService
-	onetimeTemplate       *template.Template
-	onetimeRevealTemplate *template.Template
-	onetimeErrorTemplate  *template.Template
-	resultTemplate        *template.Template
+	secretService   *SecretService
+	templateService *s.TemplateService
 }
 
-func NewSecretHandler(secretService *SecretService) *SecretHandler {
-	onetimeTmpl := template.Must(template.ParseFiles("web/templates/onetime.html"))
-	onetimeRevealTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-revealed.html"))
-	onetimeErrorTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-error.html"))
-	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
+func NewSecretHandler(secretService *SecretService, templateService *s.TemplateService) *SecretHandler {
 	return &SecretHandler{
-		secretService:         secretService,
-		onetimeTemplate:       onetimeTmpl,
-		onetimeRevealTemplate: onetimeRevealTmpl,
-		onetimeErrorTemplate:  onetimeErrorTmpl,
-		resultTemplate:        resultTmpl,
+		secretService:   secretService,
+		templateService: templateService,
 	}
 }
 
@@ -70,7 +59,7 @@ func (h *SecretHandler) CreateSecret(w http.ResponseWriter, r *http.Request) err
 			"ButtonID": "secret",
 			"Warning":  "This link will self-destruct after being viewed once.",
 		}
-		return h.resultTemplate.Execute(w, data)
+		return h.templateService.RenderResult(w, data)
 	}
 
 	return response.JSON(w, 201, secretURL)
@@ -104,7 +93,7 @@ func (h *SecretHandler) GetSecretByShort(w http.ResponseWriter, r *http.Request)
 			"ID":   short,
 			"Type": "secret",
 		}
-		return h.onetimeTemplate.Execute(w, data)
+		return h.templateService.RenderOnetime(w, data)
 	}
 
 	// For API clients, immediately reveal the secret (backward compatibility)
@@ -134,7 +123,7 @@ func (h *SecretHandler) RevealOneTimeSecret(w http.ResponseWriter, r *http.Reque
 		data := map[string]string{
 			"Error": "Invalid secret code",
 		}
-		return h.onetimeErrorTemplate.Execute(w, data)
+		return h.templateService.RenderOnetimeError(w, data)
 	}
 
 	// Consume the secret (retrieve and delete)
@@ -144,7 +133,7 @@ func (h *SecretHandler) RevealOneTimeSecret(w http.ResponseWriter, r *http.Reque
 		data := map[string]string{
 			"Error": "This one-time link has already been viewed or does not exist.",
 		}
-		return h.onetimeErrorTemplate.Execute(w, data)
+		return h.templateService.RenderOnetimeError(w, data)
 	}
 
 	// Return the revealed content
@@ -153,5 +142,5 @@ func (h *SecretHandler) RevealOneTimeSecret(w http.ResponseWriter, r *http.Reque
 		"Type": "secret",
 		"Data": secret.Data,
 	}
-	return h.onetimeRevealTemplate.Execute(w, data)
+	return h.templateService.RenderOnetimeReveal(w, data)
 }

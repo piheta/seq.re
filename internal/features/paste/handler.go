@@ -3,7 +3,6 @@ package paste
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net/http"
 
 	"github.com/piheta/apicore/apierr"
@@ -13,27 +12,14 @@ import (
 )
 
 type PasteHandler struct {
-	pasteService          *PasteService
-	contentViewerTemplate *template.Template
-	resultTemplate        *template.Template
-	onetimeTemplate       *template.Template
-	onetimeRevealTemplate *template.Template
-	onetimeErrorTemplate  *template.Template
+	pasteService    *PasteService
+	templateService *shared.TemplateService
 }
 
-func NewPasteHandler(pasteService *PasteService) *PasteHandler {
-	contentViewerTmpl := template.Must(template.ParseFiles("web/templates/content-viewer.html"))
-	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
-	onetimeTmpl := template.Must(template.ParseFiles("web/templates/onetime.html"))
-	onetimeRevealTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-revealed.html"))
-	onetimeErrorTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-error.html"))
+func NewPasteHandler(pasteService *PasteService, templateService *shared.TemplateService) *PasteHandler {
 	return &PasteHandler{
-		pasteService:          pasteService,
-		contentViewerTemplate: contentViewerTmpl,
-		resultTemplate:        resultTmpl,
-		onetimeTemplate:       onetimeTmpl,
-		onetimeRevealTemplate: onetimeRevealTmpl,
-		onetimeErrorTemplate:  onetimeErrorTmpl,
+		pasteService:    pasteService,
+		templateService: templateService,
 	}
 }
 
@@ -75,7 +61,7 @@ func (h *PasteHandler) CreatePaste(w http.ResponseWriter, r *http.Request) error
 		if req.OneTime {
 			data["Warning"] = "This link will self-destruct after being viewed once."
 		}
-		return h.resultTemplate.Execute(w, data)
+		return h.templateService.RenderResult(w, data)
 	}
 
 	return response.JSON(w, 201, pasteURL)
@@ -110,7 +96,7 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 			"ID":   short,
 			"Type": "code",
 		}
-		return h.onetimeTemplate.Execute(w, data)
+		return h.templateService.RenderOnetime(w, data)
 	}
 
 	// Consume the paste (will delete if OneTime)
@@ -130,7 +116,7 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 				"Language": paste.Language,
 			},
 		}
-		return h.contentViewerTemplate.Execute(w, data)
+		return h.templateService.RenderContentViewer(w, data)
 	}
 
 	// API clients get JSON or plain text
@@ -161,7 +147,7 @@ func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request
 		data := map[string]string{
 			"Error": "Invalid paste code",
 		}
-		return h.onetimeErrorTemplate.Execute(w, data)
+		return h.templateService.RenderOnetimeError(w, data)
 	}
 
 	// Consume the paste (retrieve and delete)
@@ -171,7 +157,7 @@ func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request
 		data := map[string]string{
 			"Error": "This one-time link has already been viewed or does not exist.",
 		}
-		return h.onetimeErrorTemplate.Execute(w, data)
+		return h.templateService.RenderOnetimeError(w, data)
 	}
 
 	// Return the revealed content
@@ -183,5 +169,5 @@ func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request
 			"Language": paste.Language,
 		},
 	}
-	return h.onetimeRevealTemplate.Execute(w, data)
+	return h.templateService.RenderOnetimeReveal(w, data)
 }

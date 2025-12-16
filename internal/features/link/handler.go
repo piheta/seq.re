@@ -3,7 +3,6 @@ package link
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
 
@@ -14,27 +13,14 @@ import (
 )
 
 type LinkHandler struct {
-	linkService           *LinkService
-	redirectTemplate      *template.Template
-	resultTemplate        *template.Template
-	onetimeTemplate       *template.Template
-	onetimeRevealTemplate *template.Template
-	onetimeErrorTemplate  *template.Template
+	linkService     *LinkService
+	templateService *s.TemplateService
 }
 
-func NewLinkHandler(linkService *LinkService) *LinkHandler {
-	redirectTmpl := template.Must(template.ParseFiles("web/templates/redirect.html"))
-	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
-	onetimeTmpl := template.Must(template.ParseFiles("web/templates/onetime.html"))
-	onetimeRevealTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-revealed.html"))
-	onetimeErrorTmpl := template.Must(template.ParseFiles("web/templates/partials/onetime-error.html"))
+func NewLinkHandler(linkService *LinkService, templateService *s.TemplateService) *LinkHandler {
 	return &LinkHandler{
-		linkService:           linkService,
-		redirectTemplate:      redirectTmpl,
-		resultTemplate:        resultTmpl,
-		onetimeTemplate:       onetimeTmpl,
-		onetimeRevealTemplate: onetimeRevealTmpl,
-		onetimeErrorTemplate:  onetimeErrorTmpl,
+		linkService:     linkService,
+		templateService: templateService,
 	}
 }
 
@@ -68,7 +54,7 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 			"ID":   short,
 			"Type": "url",
 		}
-		return h.onetimeTemplate.Execute(w, data)
+		return h.templateService.RenderOnetime(w, data)
 	}
 
 	// Consume the link (will delete if OneTime)
@@ -80,7 +66,7 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 	if s.IsBrowser(r) && link.Encrypted {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := LinkResponse{URL: link.URL}
-		return h.redirectTemplate.Execute(w, data)
+		return h.templateService.RenderRedirect(w, data)
 	}
 
 	return response.Redirect(w, r, link.URL)
@@ -135,7 +121,7 @@ func (h *LinkHandler) CreateLink(w http.ResponseWriter, r *http.Request) error {
 		if linkReq.OneTime {
 			data["Warning"] = "This link will self-destruct after being viewed once."
 		}
-		return h.resultTemplate.Execute(w, data)
+		return h.templateService.RenderResult(w, data)
 	}
 
 	return response.JSON(w, 201, shortURL)
@@ -187,7 +173,7 @@ func (h *LinkHandler) RevealOneTimeLink(w http.ResponseWriter, r *http.Request) 
 		data := map[string]string{
 			"Error": "Invalid link code",
 		}
-		return h.onetimeErrorTemplate.Execute(w, data)
+		return h.templateService.RenderOnetimeError(w, data)
 	}
 
 	// Consume the link (retrieve and delete)
@@ -197,7 +183,7 @@ func (h *LinkHandler) RevealOneTimeLink(w http.ResponseWriter, r *http.Request) 
 		data := map[string]string{
 			"Error": "This one-time link has already been viewed or does not exist.",
 		}
-		return h.onetimeErrorTemplate.Execute(w, data)
+		return h.templateService.RenderOnetimeError(w, data)
 	}
 
 	// Return the revealed content
@@ -206,5 +192,5 @@ func (h *LinkHandler) RevealOneTimeLink(w http.ResponseWriter, r *http.Request) 
 		"Type": "url",
 		"Data": link.URL,
 	}
-	return h.onetimeRevealTemplate.Execute(w, data)
+	return h.templateService.RenderOnetimeReveal(w, data)
 }
