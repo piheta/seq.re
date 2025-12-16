@@ -7,6 +7,8 @@
     <title>View Content - seq.re</title>
     <link rel="icon" type="image/webp" href="/static/favicon.webp">
     <link rel="stylesheet" href="/static/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="/static/crypto.js"></script>
     <script src="/static/app.js"></script>
     <style>
@@ -42,11 +44,11 @@
             <div class="space-y-6">
                 {{if eq .Type "code"}}
                 <div class="space-y-4">
-                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                        <pre class="text-gray-100 text-sm"><code id="decrypted-content">{{if .Encrypted}}Loading...{{else}}{{.Data}}{{end}}</code></pre>
+                    <div class="bg-gray-900 rounded-lg overflow-hidden">
+                        <pre class="!bg-gray-900 !m-0"><code id="decrypted-content" class="{{if .Metadata.Language}}language-{{.Metadata.Language}}{{end}} !bg-gray-900">{{if .Encrypted}}Loading...{{else}}{{.Data}}{{end}}</code></pre>
                     </div>
                     {{if .Metadata.Language}}
-                    <p class="text-dr-text-gray dark:text-dr-text-gray-light">Language: {{.Metadata.Language}}</p>
+                    <p class="text-dr-text-gray dark:text-dr-text-gray-light text-sm">Language: {{.Metadata.Language}}</p>
                     {{end}}
                     <button onclick="copyDecryptedContent()" id="copyCodeBtn"
                         class="{{if .Encrypted}}hidden {{end}}px-4 py-2 bg-dr-orange dark:bg-dr-orange-dark hover:opacity-90 text-white rounded-md transition-colors">
@@ -116,6 +118,8 @@
             // If not encrypted, content is already displayed for code
             if (!isEncrypted && contentType === 'code') {
                 decryptedData = encryptedData;
+                // Apply syntax highlighting
+                hljs.highlightElement(contentEl);
                 return;
             }
 
@@ -145,6 +149,8 @@
                         const cryptoKey = await importKey(key);
                         decryptedData = await decrypt(encryptedData, cryptoKey);
                         contentEl.textContent = decryptedData;
+                        // Apply syntax highlighting after decryption
+                        hljs.highlightElement(contentEl);
                         document.getElementById('copyCodeBtn').classList.remove('hidden');
                     }
                 } else if (contentType === 'image') {

@@ -28,11 +28,11 @@
     </div>
     {{else if eq .Type "code"}}
     <div class="space-y-4">
-        <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-            <pre class="text-gray-100 text-sm"><code id="decrypted-content">Decrypting...</code></pre>
+        <div class="bg-gray-900 rounded-lg overflow-hidden">
+            <pre class="!bg-gray-900 !m-0"><code id="decrypted-content" class="{{if .Metadata.Language}}language-{{.Metadata.Language}}{{end}} !bg-gray-900">Decrypting...</code></pre>
         </div>
         {{if .Metadata.Language}}
-        <p class="text-dr-text-gray dark:text-dr-text-gray-light">Language: {{.Metadata.Language}}</p>
+        <p class="text-dr-text-gray dark:text-dr-text-gray-light text-sm">Language: {{.Metadata.Language}}</p>
         {{end}}
         <button onclick="copyDecryptedContent()" id="copyCodeBtn"
             class="hidden px-4 py-2 bg-dr-orange dark:bg-dr-orange-dark hover:opacity-90 text-white rounded-md transition-colors">
@@ -136,7 +136,12 @@
                 return; // Images don't have copy button
             } else {
                 contentEl.textContent = decryptedData;
-                contentEl.className = 'text-dr-text-heading dark:text-dr-text-heading-dark whitespace-pre-wrap break-words';
+                if (contentType === 'code') {
+                    // Apply syntax highlighting for code
+                    hljs.highlightElement(contentEl);
+                } else {
+                    contentEl.className = 'text-dr-text-heading dark:text-dr-text-heading-dark whitespace-pre-wrap break-words';
+                }
             }
 
             // Show the copy button
