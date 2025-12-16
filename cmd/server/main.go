@@ -58,7 +58,7 @@ func main() {
 	imageRepo := img.NewImageRepo(config.DB)
 	pasteRepo := paste.NewPasteRepo(config.DB)
 
-	templateService := shared.NewTemplateService()
+	templateService := shared.NewTemplateService(version, config.Config.ContactEmail)
 
 	ipService := ip.NewIPService()
 	linkService := link.NewLinkService(linkRepo)

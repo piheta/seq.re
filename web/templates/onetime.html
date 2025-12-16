@@ -31,19 +31,18 @@
         <header class="mb-8 flex items-center justify-between">
             <a href="/"
                 class="text-dr-text-heading dark:text-dr-text-heading-dark text-4xl hover:opacity-80 transition-opacity">seq.re</a>
-            <button onclick="toggleDarkMode()"
-                class="p-2 rounded-md bg-dr-bg dark:bg-dr-bg-dark shadow-sm hover:bg-dr-bg-gray dark:hover:bg-dr-bg-gray-dark"
-                aria-label="Toggle dark mode" id="dark-mode-toggle">
+            <button id="dark-mode-toggle" class="p-2 rounded-md bg-dr-bg-page dark:bg-dr-bg-page-dark"
+                onclick="toggleDarkMode()" aria-label="Toggle dark mode">
+                <svg id="sun-icon" class="w-5 h-5 hidden text-dr-orange dark:text-dr-orange-dark" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
+                </svg>
                 <svg id="moon-icon" class="w-5 h-5 text-dr-indigo dark:text-dr-indigo-dark" fill="none"
                     stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
-                    </path>
-                </svg>
-                <svg id="sun-icon" class="w-5 h-5 text-dr-orange dark:text-dr-orange-dark hidden" fill="none"
-                    stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
                     </path>
                 </svg>
             </button>
@@ -98,7 +97,7 @@
 
                 <!-- Reveal button - left aligned -->
                 <button hx-post="{{if eq .Type "secret"}}/api/secrets/{{.ID}}/onetime{{else if eq .Type "url"}}/api/links/{{.ID}}/onetime{{else if eq .Type "code"}}/api/pastes/{{.ID}}/onetime{{else if eq .Type "image"}}/api/images/{{.ID}}/onetime{{end}}" hx-target="#contentArea" hx-swap="innerHTML"
-                    class="px-4 py-2 bg-dr-blue dark:bg-dr-blue-light hover:opacity-90 disabled:bg-dr-bg-gray disabled:cursor-not-allowed text-white rounded-md transition-colors inline-flex items-center gap-2">
+                    class="px-4 py-2 bg-dr-blue dark:bg-dr-blue-dark hover:bg-dr-bg-blue-hover dark:hover:bg-dr-bg-blue-hover-dark disabled:bg-dr-bg-gray disabled:cursor-not-allowed text-white rounded-md transition-colors inline-flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -145,6 +144,13 @@
                 <a href="https://github.com/piheta/seq.re/blob/main/LICENSE"
                     class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
                     target="_blank">License</a>
+                {{if .ContactEmail}}
+                <a href="mailto:{{.ContactEmail}}"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark">Contact</a>
+                {{end}}
+                {{if .Version}}
+                <span class="sm:ml-auto text-dr-text-muted dark:text-dr-text-muted-dark">{{.Version}}</span>
+                {{end}}
             </div>
         </footer>
     </div>
