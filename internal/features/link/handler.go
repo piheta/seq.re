@@ -41,13 +41,11 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 		return apierr.NewError(422, "validation", "Invalid shorturl code")
 	}
 
-	// Check if link exists without consuming it (for one-time flow)
 	link, err := h.linkService.CheckLinkExists(short)
 	if err != nil {
 		return apierr.NewError(404, "url", "url not found")
 	}
 
-	// For one-time links with browser, show confirmation page
 	if link.OneTime && s.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]string{
@@ -57,7 +55,6 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 		return h.templateService.RenderOnetime(w, data)
 	}
 
-	// Consume the link (will delete if OneTime)
 	link, err = h.linkService.GetLinkByShort(short)
 	if err != nil {
 		return apierr.NewError(404, "url", "url not found")
@@ -164,7 +161,7 @@ func (h *LinkHandler) GetLinkByShort(w http.ResponseWriter, r *http.Request) err
 // @Success 200 {string} string "Link content HTML partial"
 // @Failure 404
 // @Failure 422
-// @Router /api/onetime/link/{short} [post]
+// @Router /api/links/{short}/onetime [post]
 func (h *LinkHandler) RevealOneTimeLink(w http.ResponseWriter, r *http.Request) error {
 	short := r.PathValue("short")
 
@@ -176,7 +173,6 @@ func (h *LinkHandler) RevealOneTimeLink(w http.ResponseWriter, r *http.Request) 
 		return h.templateService.RenderOnetimeError(w, data)
 	}
 
-	// Consume the link (retrieve and delete)
 	link, err := h.linkService.GetLinkByShort(short)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -186,11 +182,11 @@ func (h *LinkHandler) RevealOneTimeLink(w http.ResponseWriter, r *http.Request) 
 		return h.templateService.RenderOnetimeError(w, data)
 	}
 
-	// Return the revealed content
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := map[string]any{
 		"Type": "url",
 		"Data": link.URL,
 	}
+
 	return h.templateService.RenderOnetimeReveal(w, data)
 }

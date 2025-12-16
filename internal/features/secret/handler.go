@@ -114,7 +114,7 @@ func (h *SecretHandler) GetSecretByShort(w http.ResponseWriter, r *http.Request)
 // @Success 200 {string} string "Secret content HTML partial"
 // @Failure 404
 // @Failure 422
-// @Router /api/onetime/{short} [post]
+// @Router /api/secrets/{short}/onetime [post]
 func (h *SecretHandler) RevealOneTimeSecret(w http.ResponseWriter, r *http.Request) error {
 	short := r.PathValue("short")
 

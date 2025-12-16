@@ -54,7 +54,6 @@ func (s *LinkService) DeleteLink(short string) error {
 	return s.linkRepo.Delete(short)
 }
 
-// CheckLinkExists checks if a link exists without consuming it (for one-time flow)
 func (s *LinkService) CheckLinkExists(short string) (*Link, error) {
 	return s.linkRepo.GetByShort(short)
 }

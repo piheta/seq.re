@@ -105,13 +105,11 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return apierr.NewError(422, "validation", "Invalid image code")
 	}
 
-	// Check if image exists without consuming it (for one-time flow)
 	image, err := h.imageService.CheckImageExists(short)
 	if err != nil {
 		return apierr.NewError(404, "not_found", "Image not found")
 	}
 
-	// For one-time images with browser, show confirmation page
 	if image.OneTime && s.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]string{
@@ -121,16 +119,13 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return h.templateService.RenderOnetime(w, data)
 	}
 
-	// Consume the image (will delete if OneTime)
 	image, imageData, err := h.imageService.GetImage(short)
 	if err != nil {
 		return apierr.NewError(404, "not_found", "Image not found")
 	}
 
-	// For browser requests, use the unified content viewer template
 	if s.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		// For unencrypted images, base64 encode for safe embedding in HTML
 		imageDataStr := string(imageData)
 		if !image.Encrypted {
 			imageDataStr = base64.StdEncoding.EncodeToString(imageData)
@@ -150,7 +145,6 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return response.JSON(w, 200, ImageResponse{Data: string(imageData)}) // already base64 encoded
 	}
 
-	// Otherwise return raw image bytes
 	w.Header().Set("Content-Type", image.ContentType)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(imageData)
@@ -165,7 +159,7 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 // @Success 200 {string} string "Image content HTML partial"
 // @Failure 404
 // @Failure 422
-// @Router /api/onetime/image/{short} [post]
+// @Router /api/images/{short}/onetime [post]
 func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request) error {
 	short := r.PathValue("short")
 
@@ -177,7 +171,6 @@ func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request
 		return h.templateService.RenderOnetimeError(w, data)
 	}
 
-	// Consume the image (retrieve and delete)
 	image, imageData, err := h.imageService.GetImage(short)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -187,10 +180,8 @@ func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request
 		return h.templateService.RenderOnetimeError(w, data)
 	}
 
-	// Return the revealed content
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	// For unencrypted images, base64 encode for safe embedding in HTML
 	imageDataStr := string(imageData)
 	if !image.Encrypted {
 		imageDataStr = base64.StdEncoding.EncodeToString(imageData)

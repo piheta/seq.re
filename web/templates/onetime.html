@@ -82,7 +82,7 @@
 
                 <!-- Reveal button - left aligned -->
                 <button
-                    hx-post="{{if eq .Type "secret"}}/api/onetime/{{.ID}}{{else if eq .Type "url"}}/api/onetime/link/{{.ID}}{{else if eq .Type "code"}}/api/onetime/paste/{{.ID}}{{else if eq .Type "image"}}/api/onetime/image/{{.ID}}{{end}}"
+                    hx-post="{{if eq .Type "secret"}}/api/secrets/{{.ID}}/onetime{{else if eq .Type "url"}}/api/links/{{.ID}}/onetime{{else if eq .Type "code"}}/api/pastes/{{.ID}}/onetime{{else if eq .Type "image"}}/api/images/{{.ID}}/onetime{{end}}"
                     hx-target="#contentArea"
                     hx-swap="innerHTML"
                     class="px-4 py-2 bg-dr-blue dark:bg-dr-blue-light hover:opacity-90 disabled:bg-dr-bg-gray disabled:cursor-not-allowed text-white rounded-md transition-colors inline-flex items-center gap-2"

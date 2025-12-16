@@ -95,7 +95,6 @@ func (s *ImageService) DeleteImage(short string, filePath string) error {
 	return nil
 }
 
-// CheckImageExists checks if an image exists without consuming it (for one-time flow)
 func (s *ImageService) CheckImageExists(short string) (*Image, error) {
 	return s.imageRepo.GetByShort(short)
 }

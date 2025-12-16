@@ -83,13 +83,11 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 		return apierr.NewError(422, "validation", "Invalid paste code")
 	}
 
-	// Check if paste exists without consuming it (for one-time flow)
 	paste, err := h.pasteService.CheckPasteExists(short)
 	if err != nil {
 		return apierr.NewError(404, "not_found", "Paste not found")
 	}
 
-	// For one-time pastes with browser, show confirmation page first
 	if paste.OneTime && shared.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]string{
@@ -99,13 +97,11 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 		return h.templateService.RenderOnetime(w, data)
 	}
 
-	// Consume the paste (will delete if OneTime)
 	paste, err = h.pasteService.GetPaste(short)
 	if err != nil {
 		return apierr.NewError(404, "not_found", "Paste not found")
 	}
 
-	// For browser requests, use the unified content viewer template
 	if shared.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]any{
@@ -119,7 +115,6 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 		return h.templateService.RenderContentViewer(w, data)
 	}
 
-	// API clients get JSON or plain text
 	if paste.Encrypted {
 		return response.JSON(w, 200, PasteResponse{Data: paste.Content})
 	}
@@ -138,7 +133,7 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 // @Success 200 {string} string "Paste content HTML partial"
 // @Failure 404
 // @Failure 422
-// @Router /api/onetime/paste/{short} [post]
+// @Router /api/pastes/{short}/onetime [post]
 func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request) error {
 	short := r.PathValue("short")
 
@@ -150,7 +145,6 @@ func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request
 		return h.templateService.RenderOnetimeError(w, data)
 	}
 
-	// Consume the paste (retrieve and delete)
 	paste, err := h.pasteService.GetPaste(short)
 	if err != nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -160,7 +154,6 @@ func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request
 		return h.templateService.RenderOnetimeError(w, data)
 	}
 
-	// Return the revealed content
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := map[string]any{
 		"Type": "code",
@@ -169,5 +162,6 @@ func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request
 			"Language": paste.Language,
 		},
 	}
+
 	return h.templateService.RenderOnetimeReveal(w, data)
 }
