@@ -80,12 +80,12 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 	short := r.PathValue("short")
 
 	if len(short) != 6 {
-		return apierr.NewError(422, "validation", "Invalid paste code")
+		return shared.MapError(w, r, apierr.NewError(422, "validation", "Invalid paste code"), h.templateService)
 	}
 
 	paste, err := h.pasteService.CheckPasteExists(short)
 	if err != nil {
-		return apierr.NewError(404, "not_found", "Paste not found")
+		return shared.MapError(w, r, apierr.NewError(404, "not_found", "Paste not found"), h.templateService)
 	}
 
 	if paste.OneTime && shared.IsBrowser(r) {
@@ -99,7 +99,7 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 
 	paste, err = h.pasteService.GetPaste(short)
 	if err != nil {
-		return apierr.NewError(404, "not_found", "Paste not found")
+		return shared.MapError(w, r, apierr.NewError(404, "not_found", "Paste not found"), h.templateService)
 	}
 
 	if shared.IsBrowser(r) {
@@ -138,20 +138,12 @@ func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request
 	short := r.PathValue("short")
 
 	if len(short) != 6 {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := map[string]string{
-			"Error": "Invalid paste code",
-		}
-		return h.templateService.RenderOnetimeError(w, data)
+		return h.templateService.RenderError(w, "Invalid paste code")
 	}
 
 	paste, err := h.pasteService.GetPaste(short)
 	if err != nil {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := map[string]string{
-			"Error": "This one-time link has already been viewed or does not exist.",
-		}
-		return h.templateService.RenderOnetimeError(w, data)
+		return h.templateService.RenderError(w, "This one-time link has already been viewed or does not exist.")
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

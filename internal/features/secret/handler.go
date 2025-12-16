@@ -78,13 +78,13 @@ func (h *SecretHandler) GetSecretByShort(w http.ResponseWriter, r *http.Request)
 	short := r.PathValue("short")
 
 	if len(short) != 6 {
-		return apierr.NewError(422, "validation", "Invalid shorturl code")
+		return s.MapError(w, r, apierr.NewError(422, "validation", "Invalid secret code"), h.templateService)
 	}
 
 	// Check if secret exists without consuming it
 	exists, err := h.secretService.CheckSecretExists(short)
 	if err != nil || !exists {
-		return apierr.NewError(404, "not_found", "secret not found or already viewed")
+		return s.MapError(w, r, apierr.NewError(404, "not_found", "Secret not found or already viewed"), h.templateService)
 	}
 
 	if s.IsBrowser(r) {
@@ -99,7 +99,7 @@ func (h *SecretHandler) GetSecretByShort(w http.ResponseWriter, r *http.Request)
 	// For API clients, immediately reveal the secret (backward compatibility)
 	secret, err := h.secretService.GetSecret(short)
 	if err != nil {
-		return apierr.NewError(404, "not_found", "secret not found or already viewed")
+		return s.MapError(w, r, apierr.NewError(404, "not_found", "Secret not found or already viewed"), h.templateService)
 	}
 
 	secretResp := SecretResponse{Data: secret.Data}
@@ -119,24 +119,14 @@ func (h *SecretHandler) RevealOneTimeSecret(w http.ResponseWriter, r *http.Reque
 	short := r.PathValue("short")
 
 	if len(short) != 6 {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := map[string]string{
-			"Error": "Invalid secret code",
-		}
-		return h.templateService.RenderOnetimeError(w, data)
+		return h.templateService.RenderError(w, "Invalid secret code")
 	}
 
-	// Consume the secret (retrieve and delete)
 	secret, err := h.secretService.GetSecret(short)
 	if err != nil {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := map[string]string{
-			"Error": "This one-time link has already been viewed or does not exist.",
-		}
-		return h.templateService.RenderOnetimeError(w, data)
+		return h.templateService.RenderError(w, "This one-time link has already been viewed or does not exist.")
 	}
 
-	// Return the revealed content
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := map[string]any{
 		"Type": "secret",

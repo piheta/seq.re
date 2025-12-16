@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - seq.re</title>
+    <link rel="icon" type="image/webp" href="/static/favicon.webp">
+    <link rel="stylesheet" href="/static/tailwind.min.css">
+    <script src="/static/app.js"></script>
+    <style>
+        body {
+            color-scheme: light;
+            background-image: radial-gradient(#ffffff 15%, transparent 0);
+            background-size: 30px 30px;
+        }
+
+        .dark body {
+            color-scheme: dark !important;
+            background-image: radial-gradient(#111415 15%, transparent 0);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-dr-bg-page dark:bg-dr-bg-page-dark py-8 px-4">
+    <div class="max-w-2xl mx-auto">
+        <header class="mb-8 flex items-center justify-between">
+            <a href="/" class="text-dr-text-heading dark:text-dr-text-heading-dark text-4xl hover:opacity-80 transition-opacity">seq.re</a>
+            <button
+                onclick="toggleDarkMode()"
+                class="p-2 rounded-md bg-dr-bg dark:bg-dr-bg-dark shadow-sm hover:bg-dr-bg-gray dark:hover:bg-dr-bg-gray-dark transition-colors"
+                aria-label="Toggle dark mode"
+                id="dark-mode-toggle"
+            >
+                <svg id="moon-icon" class="w-5 h-5 text-dr-indigo dark:text-dr-indigo-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <svg id="sun-icon" class="w-5 h-5 text-dr-orange dark:text-dr-orange-dark hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            </button>
+        </header>
+
+        <div class="bg-dr-bg dark:bg-dr-bg-dark rounded-lg shadow-sm p-6 md:p-8">
+            <div class="space-y-6">
+                <!-- Header with icon - matching onetime pages layout -->
+                <div class="flex items-center gap-3 pb-4 border-b border-dr-border dark:border-dr-border-dark">
+                    <div class="bg-red-100 dark:bg-red-900/30 p-2 rounded-full">
+                        <svg class="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-dr-text-heading dark:text-dr-text-heading-dark text-xl">Unable to Retrieve Content</h2>
+                        <p class="text-dr-text-gray dark:text-dr-text-gray-light text-sm">This link is no longer available</p>
+                    </div>
+                </div>
+
+                <!-- Error message box -->
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <p class="text-red-800 dark:text-red-200 text-sm">
+                        <strong>Error:</strong> {{.Error}}
+                    </p>
+                </div>
+
+                <!-- Action button -->
+                <div>
+                    <a href="/"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-dr-blue dark:bg-dr-blue-light hover:opacity-90 text-white rounded-md transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        Go to Homepage
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-6 border-t border-dr-border dark:border-dr-border-dark">
+            <div class="flex flex-wrap items-center gap-4 text-sm text-dr-text-gray dark:text-dr-text-gray-light">
+                <a href="https://github.com/piheta/seq.re"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
+                    target="_blank">GitHub</a>
+                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#cli"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
+                    target="_blank">CLI</a>
+                <a href="https://github.com/piheta/seq.re?tab=readme-ov-file#server-deployment"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
+                    target="_blank">Host Your Own</a>
+                <a href="/privacy"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark">Privacy
+                    Policy</a>
+                <a href="https://github.com/piheta/seq.re/blob/main/LICENSE"
+                    class="transition-colors text-dr-text-gray dark:text-dr-text-gray-light hover:text-dr-text-heading dark:hover:text-dr-text-heading-dark"
+                    target="_blank">License</a>
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>

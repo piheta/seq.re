@@ -102,12 +102,12 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 	short := r.PathValue("short")
 
 	if len(short) != 6 {
-		return apierr.NewError(422, "validation", "Invalid image code")
+		return s.MapError(w, r, apierr.NewError(422, "validation", "Invalid image code"), h.templateService)
 	}
 
 	image, err := h.imageService.CheckImageExists(short)
 	if err != nil {
-		return apierr.NewError(404, "not_found", "Image not found")
+		return s.MapError(w, r, apierr.NewError(404, "not_found", "Image not found"), h.templateService)
 	}
 
 	if image.OneTime && s.IsBrowser(r) {
@@ -164,20 +164,12 @@ func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request
 	short := r.PathValue("short")
 
 	if len(short) != 6 {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := map[string]string{
-			"Error": "Invalid image code",
-		}
-		return h.templateService.RenderOnetimeError(w, data)
+		return h.templateService.RenderError(w, "Invalid image code")
 	}
 
 	image, imageData, err := h.imageService.GetImage(short)
 	if err != nil {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := map[string]string{
-			"Error": "This one-time link has already been viewed or does not exist.",
-		}
-		return h.templateService.RenderOnetimeError(w, data)
+		return h.templateService.RenderError(w, "This one-time link has already been viewed or does not exist.")
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

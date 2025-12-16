@@ -3,6 +3,7 @@ package shared
 import (
 	"html/template"
 	"io"
+	"net/http"
 )
 
 type TemplateService struct {
@@ -10,7 +11,7 @@ type TemplateService struct {
 	result        *template.Template
 	onetime       *template.Template
 	onetimeReveal *template.Template
-	onetimeError  *template.Template
+	error         *template.Template
 	redirect      *template.Template
 	index         *template.Template
 	partials      *template.Template
@@ -22,7 +23,7 @@ func NewTemplateService() *TemplateService {
 		result:        template.Must(template.ParseFiles("web/templates/partials/generic-result.html")),
 		onetime:       template.Must(template.ParseFiles("web/templates/onetime.html")),
 		onetimeReveal: template.Must(template.ParseFiles("web/templates/partials/onetime-revealed.html")),
-		onetimeError:  template.Must(template.ParseFiles("web/templates/partials/onetime-error.html")),
+		error:         template.Must(template.ParseFiles("web/templates/error.html")),
 		redirect:      template.Must(template.ParseFiles("web/templates/redirect.html")),
 		index:         loadIndexTemplate(),
 		partials:      template.Must(template.ParseGlob("web/templates/partials/*.html")),
@@ -50,8 +51,13 @@ func (ts *TemplateService) RenderOnetimeReveal(w io.Writer, data any) error {
 	return ts.onetimeReveal.Execute(w, data)
 }
 
-func (ts *TemplateService) RenderOnetimeError(w io.Writer, data any) error {
-	return ts.onetimeError.Execute(w, data)
+func (ts *TemplateService) RenderError(w http.ResponseWriter, message string) error {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data := map[string]string{
+		"Error": message,
+	}
+
+	return ts.error.Execute(w, data)
 }
 
 func (ts *TemplateService) RenderRedirect(w io.Writer, data any) error {
