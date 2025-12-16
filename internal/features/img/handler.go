@@ -1,8 +1,8 @@
 package img
 
 import (
+	"encoding/base64"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 
@@ -13,18 +13,14 @@ import (
 )
 
 type ImageHandler struct {
-	imageService        *ImageService
-	imageViewerTemplate *template.Template
-	resultTemplate      *template.Template
+	imageService    *ImageService
+	templateService *s.TemplateService
 }
 
-func NewImageHandler(imageService *ImageService) *ImageHandler {
-	viewerTmpl := template.Must(template.ParseFiles("web/templates/image-viewer.html"))
-	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
+func NewImageHandler(imageService *ImageService, templateService *s.TemplateService) *ImageHandler {
 	return &ImageHandler{
-		imageService:        imageService,
-		imageViewerTemplate: viewerTmpl,
-		resultTemplate:      resultTmpl,
+		imageService:    imageService,
+		templateService: templateService,
 	}
 }
 
@@ -87,7 +83,7 @@ func (h *ImageHandler) CreateImage(w http.ResponseWriter, r *http.Request) error
 		if onetime {
 			data["Warning"] = "This link will self-destruct after being viewed once."
 		}
-		return h.resultTemplate.Execute(w, data)
+		return h.templateService.RenderResult(w, data)
 	}
 
 	return response.JSON(w, 201, imageURL)
@@ -109,24 +105,95 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return apierr.NewError(422, "validation", "Invalid image code")
 	}
 
+	image, err := h.imageService.CheckImageExists(short)
+	if err != nil {
+		return apierr.NewError(404, "not_found", "Image not found")
+	}
+
+	if image.OneTime && s.IsBrowser(r) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"ID":   short,
+			"Type": "image",
+		}
+		return h.templateService.RenderOnetime(w, data)
+	}
+
 	image, imageData, err := h.imageService.GetImage(short)
 	if err != nil {
 		return apierr.NewError(404, "not_found", "Image not found")
 	}
 
-	if s.IsBrowser(r) && image.Encrypted {
+	if s.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := ImageResponse{Data: string(imageData)}
-		return h.imageViewerTemplate.Execute(w, data)
+		imageDataStr := string(imageData)
+		if !image.Encrypted {
+			imageDataStr = base64.StdEncoding.EncodeToString(imageData)
+		}
+		data := map[string]any{
+			"Type":      "image",
+			"Data":      imageDataStr,
+			"Encrypted": image.Encrypted,
+			"Metadata": map[string]string{
+				"ContentType": image.ContentType,
+			},
+		}
+		return h.templateService.RenderContentViewer(w, data)
 	}
 
 	if image.Encrypted {
 		return response.JSON(w, 200, ImageResponse{Data: string(imageData)}) // already base64 encoded
 	}
 
-	// Otherwise return raw image bytes
 	w.Header().Set("Content-Type", image.ContentType)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(imageData)
 	return nil
+}
+
+// RevealOneTimeImage consumes the one-time image and returns the content.
+// @Summary Reveal one-time image
+// @Description Consumes the one-time image and returns the content (one-time use only)
+// @Tags image
+// @Param short path string true "Short code (6 characters)"
+// @Success 200 {string} string "Image content HTML partial"
+// @Failure 404
+// @Failure 422
+// @Router /api/images/{short}/onetime [post]
+func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request) error {
+	short := r.PathValue("short")
+
+	if len(short) != 6 {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"Error": "Invalid image code",
+		}
+		return h.templateService.RenderOnetimeError(w, data)
+	}
+
+	image, imageData, err := h.imageService.GetImage(short)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"Error": "This one-time link has already been viewed or does not exist.",
+		}
+		return h.templateService.RenderOnetimeError(w, data)
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	imageDataStr := string(imageData)
+	if !image.Encrypted {
+		imageDataStr = base64.StdEncoding.EncodeToString(imageData)
+	}
+
+	data := map[string]any{
+		"Type":      "image",
+		"Data":      imageDataStr,
+		"Encrypted": image.Encrypted,
+		"Metadata": map[string]string{
+			"ContentType": image.ContentType,
+		},
+	}
+	return h.templateService.RenderOnetimeReveal(w, data)
 }

@@ -95,6 +95,10 @@ func (s *ImageService) DeleteImage(short string, filePath string) error {
 	return nil
 }
 
+func (s *ImageService) CheckImageExists(short string) (*Image, error) {
+	return s.imageRepo.GetByShort(short)
+}
+
 //nolint:revive // encrypted flag is acceptable for control flow
 func (s *ImageService) getFileExtension(contentType string, encrypted bool) string {
 	if encrypted {

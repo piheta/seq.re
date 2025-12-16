@@ -53,3 +53,7 @@ func (s *LinkService) GetLinkByShort(short string) (*Link, error) {
 func (s *LinkService) DeleteLink(short string) error {
 	return s.linkRepo.Delete(short)
 }
+
+func (s *LinkService) CheckLinkExists(short string) (*Link, error) {
+	return s.linkRepo.GetByShort(short)
+}

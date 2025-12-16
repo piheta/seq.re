@@ -3,7 +3,6 @@ package paste
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net/http"
 
 	"github.com/piheta/apicore/apierr"
@@ -13,18 +12,14 @@ import (
 )
 
 type PasteHandler struct {
-	pasteService        *PasteService
-	pasteViewerTemplate *template.Template
-	resultTemplate      *template.Template
+	pasteService    *PasteService
+	templateService *shared.TemplateService
 }
 
-func NewPasteHandler(pasteService *PasteService) *PasteHandler {
-	viewerTmpl := template.Must(template.ParseFiles("web/templates/paste-viewer.html"))
-	resultTmpl := template.Must(template.ParseFiles("web/templates/partials/generic-result.html"))
+func NewPasteHandler(pasteService *PasteService, templateService *shared.TemplateService) *PasteHandler {
 	return &PasteHandler{
-		pasteService:        pasteService,
-		pasteViewerTemplate: viewerTmpl,
-		resultTemplate:      resultTmpl,
+		pasteService:    pasteService,
+		templateService: templateService,
 	}
 }
 
@@ -66,7 +61,7 @@ func (h *PasteHandler) CreatePaste(w http.ResponseWriter, r *http.Request) error
 		if req.OneTime {
 			data["Warning"] = "This link will self-destruct after being viewed once."
 		}
-		return h.resultTemplate.Execute(w, data)
+		return h.templateService.RenderResult(w, data)
 	}
 
 	return response.JSON(w, 201, pasteURL)
@@ -88,30 +83,85 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 		return apierr.NewError(422, "validation", "Invalid paste code")
 	}
 
-	paste, err := h.pasteService.GetPaste(short)
+	paste, err := h.pasteService.CheckPasteExists(short)
 	if err != nil {
 		return apierr.NewError(404, "not_found", "Paste not found")
 	}
 
-	if shared.IsBrowser(r) && paste.Encrypted {
+	if paste.OneTime && shared.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		data := struct {
-			Data     string
-			Language string
-		}{
-			Data:     paste.Content,
-			Language: paste.Language,
+		data := map[string]string{
+			"ID":   short,
+			"Type": "code",
 		}
-		return h.pasteViewerTemplate.Execute(w, data)
+		return h.templateService.RenderOnetime(w, data)
+	}
+
+	paste, err = h.pasteService.GetPaste(short)
+	if err != nil {
+		return apierr.NewError(404, "not_found", "Paste not found")
+	}
+
+	if shared.IsBrowser(r) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]any{
+			"Type":      "code",
+			"Data":      paste.Content,
+			"Encrypted": paste.Encrypted,
+			"Metadata": map[string]string{
+				"Language": paste.Language,
+			},
+		}
+		return h.templateService.RenderContentViewer(w, data)
 	}
 
 	if paste.Encrypted {
-		return response.JSON(w, 200, PasteResponse{Data: paste.Content}) // already base64 encoded
+		return response.JSON(w, 200, PasteResponse{Data: paste.Content})
 	}
 
-	// Return as plain text with UTF-8 charset
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(paste.Content))
 	return nil
+}
+
+// RevealOneTimePaste consumes the one-time paste and returns the content.
+// @Summary Reveal one-time paste
+// @Description Consumes the one-time paste and returns the content (one-time use only)
+// @Tags paste
+// @Param short path string true "Short code (6 characters)"
+// @Success 200 {string} string "Paste content HTML partial"
+// @Failure 404
+// @Failure 422
+// @Router /api/pastes/{short}/onetime [post]
+func (h *PasteHandler) RevealOneTimePaste(w http.ResponseWriter, r *http.Request) error {
+	short := r.PathValue("short")
+
+	if len(short) != 6 {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"Error": "Invalid paste code",
+		}
+		return h.templateService.RenderOnetimeError(w, data)
+	}
+
+	paste, err := h.pasteService.GetPaste(short)
+	if err != nil {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := map[string]string{
+			"Error": "This one-time link has already been viewed or does not exist.",
+		}
+		return h.templateService.RenderOnetimeError(w, data)
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data := map[string]any{
+		"Type": "code",
+		"Data": paste.Content,
+		"Metadata": map[string]string{
+			"Language": paste.Language,
+		},
+	}
+
+	return h.templateService.RenderOnetimeReveal(w, data)
 }
