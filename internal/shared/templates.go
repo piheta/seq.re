@@ -13,6 +13,7 @@ type TemplateService struct {
 	onetimeReveal *template.Template
 	error         *template.Template
 	redirect      *template.Template
+	imageDecrypt  *template.Template
 	index         *template.Template
 	partials      *template.Template
 	version       string
@@ -27,6 +28,7 @@ func NewTemplateService(version, contactEmail string) *TemplateService {
 		onetimeReveal: template.Must(template.ParseFiles("web/templates/partials/onetime-revealed.html")),
 		error:         template.Must(template.ParseFiles("web/templates/error.html")),
 		redirect:      template.Must(template.ParseFiles("web/templates/redirect.html")),
+		imageDecrypt:  template.Must(template.ParseFiles("web/templates/image-decrypt.html")),
 		index:         loadIndexTemplate(),
 		partials:      template.Must(template.ParseGlob("web/templates/partials/*.html")),
 		version:       version,
@@ -89,6 +91,10 @@ func (ts *TemplateService) mergeFooterData(data any) map[string]any {
 
 func (ts *TemplateService) RenderRedirect(w io.Writer, data any) error {
 	return ts.redirect.Execute(w, data)
+}
+
+func (ts *TemplateService) RenderImageDecrypt(w io.Writer, data any) error {
+	return ts.imageDecrypt.Execute(w, data)
 }
 
 func (ts *TemplateService) RenderIndexTemplate(w io.Writer, name string, data any) error {

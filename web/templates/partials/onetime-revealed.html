@@ -47,12 +47,6 @@
             </p>
         </div>
     </div>
-    {{else if eq .Type "image"}}
-    <div class="space-y-4">
-        <div id="decrypted-content" class="flex items-center justify-center text-dr-text-gray dark:text-dr-text-gray-light">
-            Loading image...
-        </div>
-    </div>
     {{end}}
 
     <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
@@ -67,25 +61,12 @@
     let decryptedData = '';
     const contentType = "{{.Type}}";
     const encryptedData = "{{.Data}}";
-    const imageMimeType = "{{if .Metadata.ContentType}}{{.Metadata.ContentType}}{{else}}image/png{{end}}";
 
     function copyDecryptedContent() {
         if (decryptedData) {
-            const btnId = contentType === 'secret' ? 'copySecretBtn' :
-                contentType === 'code' ? 'copyCodeBtn' : 'copyUrlBtn';
+            const btnId = contentType === 'secret' ? 'copySecretBtn' : 'copyCodeBtn';
             copyToClipboard(decryptedData, btnId);
         }
-    }
-
-    // Helper to convert base64 to blob
-    function base64ToBlob(base64, mimeType) {
-        const byteChars = atob(base64);
-        const byteNumbers = new Array(byteChars.length);
-        for (let i = 0; i < byteChars.length; i++) {
-            byteNumbers[i] = byteChars.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        return new Blob([byteArray], { type: mimeType });
     }
 
     // Display content - decrypt if encrypted, otherwise show directly
@@ -100,7 +81,7 @@
                 const cryptoKey = await importKey(key);
                 decryptedData = await decrypt(encryptedData, cryptoKey);
             } else {
-                decryptedData = encryptedData; // Not actually encrypted (but base64 for images)
+                decryptedData = encryptedData;
             }
 
             if (contentType === 'url') {
@@ -110,30 +91,6 @@
                     window.location.href = decryptedData;
                 }, 500);
                 return; // Don't show copy button for URLs
-            } else if (contentType === 'image') {
-                // For images, handle differently based on encryption
-                let blob;
-                if (isEncrypted) {
-                    // Encrypted: decode base64 to bytes, then decrypt using decryptFile
-                    const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
-                    const cryptoKey = await importKey(key);
-                    const decryptedBytes = await decryptFile(encryptedBytes, cryptoKey);
-                    blob = new Blob([decryptedBytes], { type: imageMimeType });
-                } else {
-                    // Unencrypted: just decode base64 to blob
-                    blob = base64ToBlob(encryptedData, imageMimeType);
-                }
-
-                const blobUrl = URL.createObjectURL(blob);
-                const img = document.createElement('img');
-                img.src = blobUrl;
-                img.alt = 'Shared image';
-                img.className = 'max-w-full max-h-[80vh] rounded shadow-lg';
-                img.onload = () => URL.revokeObjectURL(blobUrl); // Clean up
-
-                contentEl.innerHTML = '';
-                contentEl.appendChild(img);
-                return; // Images don't have copy button
             } else {
                 contentEl.textContent = decryptedData;
                 if (contentType === 'code') {

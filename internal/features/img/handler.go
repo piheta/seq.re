@@ -1,7 +1,6 @@
 package img
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -105,12 +104,12 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return s.MapError(w, r, apierr.NewError(422, "validation", "Invalid image code"), h.templateService)
 	}
 
-	image, err := h.imageService.CheckImageExists(short)
+	imageCheck, err := h.imageService.CheckImageExists(short)
 	if err != nil {
 		return s.MapError(w, r, apierr.NewError(404, "not_found", "Image not found"), h.templateService)
 	}
 
-	if image.OneTime && s.IsBrowser(r) {
+	if imageCheck.OneTime && s.IsBrowser(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]string{
 			"ID":   short,
@@ -121,28 +120,19 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 
 	image, imageData, err := h.imageService.GetImage(short)
 	if err != nil {
-		return apierr.NewError(404, "not_found", "Image not found")
-	}
-
-	if s.IsBrowser(r) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		imageDataStr := string(imageData)
-		if !image.Encrypted {
-			imageDataStr = base64.StdEncoding.EncodeToString(imageData)
-		}
-		data := map[string]any{
-			"Type":      "image",
-			"Data":      imageDataStr,
-			"Encrypted": image.Encrypted,
-			"Metadata": map[string]string{
-				"ContentType": image.ContentType,
-			},
-		}
-		return h.templateService.RenderContentViewer(w, data)
+		return s.MapError(w, r, apierr.NewError(404, "not_found", "Image not found"), h.templateService)
 	}
 
 	if image.Encrypted {
-		return response.JSON(w, 200, ImageResponse{Data: string(imageData)}) // already base64 encoded
+		if s.IsBrowser(r) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			data := map[string]string{
+				"Data":        string(imageData),
+				"ContentType": image.ContentType,
+			}
+			return h.templateService.RenderImageDecrypt(w, data)
+		}
+		return response.JSON(w, 200, ImageResponse{Data: string(imageData)})
 	}
 
 	w.Header().Set("Content-Type", image.ContentType)
@@ -151,12 +141,12 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 	return nil
 }
 
-// RevealOneTimeImage consumes the one-time image and returns the content.
+// RevealOneTimeImage consumes the one-time image and returns the raw image data.
 // @Summary Reveal one-time image
-// @Description Consumes the one-time image and returns the content (one-time use only)
+// @Description Consumes the one-time image and returns the raw image (one-time use only)
 // @Tags image
 // @Param short path string true "Short code (6 characters)"
-// @Success 200 {string} string "Image content HTML partial"
+// @Success 200 {file} binary "Image file"
 // @Failure 404
 // @Failure 422
 // @Router /api/images/{short}/onetime [post]
@@ -172,20 +162,15 @@ func (h *ImageHandler) RevealOneTimeImage(w http.ResponseWriter, r *http.Request
 		return h.templateService.RenderError(w, "This one-time link has already been viewed or does not exist.")
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	imageDataStr := string(imageData)
-	if !image.Encrypted {
-		imageDataStr = base64.StdEncoding.EncodeToString(imageData)
+	if image.Encrypted {
+		w.Header().Set("Content-Type", "application/json")
+		return response.JSON(w, 200, ImageResponse{
+			Data: string(imageData), // already base64 encoded
+		})
 	}
 
-	data := map[string]any{
-		"Type":      "image",
-		"Data":      imageDataStr,
-		"Encrypted": image.Encrypted,
-		"Metadata": map[string]string{
-			"ContentType": image.ContentType,
-		},
-	}
-	return h.templateService.RenderOnetimeReveal(w, data)
+	w.Header().Set("Content-Type", image.ContentType)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(imageData)
+	return nil
 }

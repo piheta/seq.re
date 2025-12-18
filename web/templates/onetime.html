@@ -96,7 +96,21 @@
                 </div>
 
                 <!-- Reveal button - left aligned -->
-                <button hx-post="{{if eq .Type "secret"}}/api/secrets/{{.ID}}/onetime{{else if eq .Type "url"}}/api/links/{{.ID}}/onetime{{else if eq .Type "code"}}/api/pastes/{{.ID}}/onetime{{else if eq .Type "image"}}/api/images/{{.ID}}/onetime{{end}}" hx-target="#contentArea" hx-swap="innerHTML"
+                {{if eq .Type "image"}}
+                <button onclick="revealImage()"
+                    class="px-4 py-2 bg-dr-blue dark:bg-dr-blue-dark hover:bg-dr-bg-blue-hover dark:hover:bg-dr-bg-blue-hover-dark disabled:bg-dr-bg-gray disabled:cursor-not-allowed text-white rounded-md transition-colors inline-flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                        </path>
+                    </svg>
+                    Reveal Image
+                </button>
+                {{else}}
+                <button hx-post="{{if eq .Type "secret"}}/api/secrets/{{.ID}}/onetime{{else if eq .Type "url"}}/api/links/{{.ID}}/onetime{{else if eq .Type "code"}}/api/pastes/{{.ID}}/onetime{{end}}" hx-target="#contentArea" hx-swap="innerHTML"
                     class="px-4 py-2 bg-dr-blue dark:bg-dr-blue-dark hover:bg-dr-bg-blue-hover dark:hover:bg-dr-bg-blue-hover-dark disabled:bg-dr-bg-gray disabled:cursor-not-allowed text-white rounded-md transition-colors inline-flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
@@ -108,6 +122,7 @@
                     </svg>
                     Reveal Content
                 </button>
+                {{end}}
 
                 <!-- Warning box - one line -->
                 <div
@@ -124,6 +139,48 @@
         <script>
             // Store the key before htmx swaps content (the hash won't change)
             window.onetimeEncryptionKey = location.hash.slice(1);
+
+            // Handle image reveal - navigate directly to the image
+            async function revealImage() {
+                const imageId = '{{.ID}}';
+                const encryptionKey = window.onetimeEncryptionKey;
+
+                if (encryptionKey && encryptionKey.length > 0) {
+                    // Encrypted image - fetch, decrypt, and display
+                    try {
+                        const response = await fetch(`/api/images/${imageId}/onetime`, {
+                            method: 'POST'
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to retrieve image');
+                        }
+
+                        const data = await response.json();
+                        const cryptoKey = await importKey(encryptionKey);
+                        const encryptedBytes = Uint8Array.from(atob(data.data), c => c.charCodeAt(0));
+                        const decryptedBytes = await decryptFile(encryptedBytes, cryptoKey);
+
+                        // Create blob and open in new window
+                        const blob = new Blob([decryptedBytes], { type: 'image/png' });
+                        const blobUrl = URL.createObjectURL(blob);
+
+                        // Replace current page with just the image
+                        window.location.href = blobUrl;
+                    } catch (err) {
+                        console.error('Error revealing image:', err);
+                        alert('Failed to decrypt and display the image.');
+                    }
+                } else {
+                    // Unencrypted image - just navigate to the reveal endpoint
+                    // Create a form and submit it to trigger the POST request
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/api/images/${imageId}/onetime`;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
         </script>
 
         <!-- Footer -->

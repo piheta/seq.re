@@ -48,7 +48,6 @@
 
         <div class="bg-dr-bg dark:bg-dr-bg-dark rounded-lg shadow-sm p-6 md:p-8" id="contentArea">
             <div class="space-y-6">
-                {{if eq .Type "code"}}
                 <div class="space-y-4">
                     <div class="bg-gray-900 rounded-lg overflow-hidden">
                         <pre class="!bg-gray-900 !m-0"><code id="decrypted-content" class="{{if .Metadata.Language}}language-{{.Metadata.Language}}{{end}} !bg-gray-900">{{if .Encrypted}}Loading...{{else}}{{.Data}}{{end}}</code></pre>
@@ -61,13 +60,6 @@
                         Copy Code
                     </button>
                 </div>
-                {{else if eq .Type "image"}}
-                <div class="space-y-4">
-                    <div id="decrypted-content" class="flex items-center justify-center text-dr-text-gray dark:text-dr-text-gray-light">
-                        Loading image...
-                    </div>
-                </div>
-                {{end}}
             </div>
         </div>
 
@@ -102,10 +94,8 @@
 
     <script>
         let decryptedData = '';
-        const contentType = "{{.Type}}";
         const encryptedData = "{{.Data}}";
         const isEncrypted = {{.Encrypted}};
-        const imageMimeType = "{{if .Metadata.ContentType}}{{.Metadata.ContentType}}{{else}}image/png{{end}}";
 
         function copyDecryptedContent() {
             if (decryptedData) {
@@ -113,72 +103,31 @@
             }
         }
 
-        // Helper to convert base64 to blob
-        function base64ToBlob(base64, mimeType) {
-            const byteChars = atob(base64);
-            const byteNumbers = new Array(byteChars.length);
-            for (let i = 0; i < byteChars.length; i++) {
-                byteNumbers[i] = byteChars.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            return new Blob([byteArray], { type: mimeType });
-        }
-
         (async function () {
             const key = location.hash.slice(1);
             const contentEl = document.getElementById('decrypted-content');
 
-            // If not encrypted, content is already displayed for code
-            if (!isEncrypted && contentType === 'code') {
+            // If not encrypted, content is already displayed
+            if (!isEncrypted) {
                 decryptedData = encryptedData;
                 // Apply syntax highlighting
                 hljs.highlightElement(contentEl);
                 return;
             }
 
-            // Need to decrypt or process
+            // Decrypt encrypted content
             try {
-                if (isEncrypted) {
-                    if (!key) {
-                        contentEl.textContent = 'Error: Encryption key not found in URL';
-                        return;
-                    }
-
-                    if (contentType === 'image') {
-                        const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
-                        const cryptoKey = await importKey(key);
-                        const decryptedBytes = await decryptFile(encryptedBytes, cryptoKey);
-                        const blob = new Blob([decryptedBytes], { type: imageMimeType });
-                        const blobUrl = URL.createObjectURL(blob);
-
-                        const img = document.createElement('img');
-                        img.src = blobUrl;
-                        img.alt = 'Shared image';
-                        img.className = 'max-w-full max-h-[80vh] rounded shadow-lg';
-                        img.onload = () => URL.revokeObjectURL(blobUrl);
-                        contentEl.innerHTML = '';
-                        contentEl.appendChild(img);
-                    } else {
-                        const cryptoKey = await importKey(key);
-                        decryptedData = await decrypt(encryptedData, cryptoKey);
-                        contentEl.textContent = decryptedData;
-                        // Apply syntax highlighting after decryption
-                        hljs.highlightElement(contentEl);
-                        document.getElementById('copyCodeBtn').classList.remove('hidden');
-                    }
-                } else if (contentType === 'image') {
-                    // Unencrypted image - base64 decode
-                    const blob = base64ToBlob(encryptedData, imageMimeType);
-                    const blobUrl = URL.createObjectURL(blob);
-
-                    const img = document.createElement('img');
-                    img.src = blobUrl;
-                    img.alt = 'Shared image';
-                    img.className = 'max-w-full max-h-[80vh] rounded shadow-lg';
-                    img.onload = () => URL.revokeObjectURL(blobUrl);
-                    contentEl.innerHTML = '';
-                    contentEl.appendChild(img);
+                if (!key) {
+                    contentEl.textContent = 'Error: Encryption key not found in URL';
+                    return;
                 }
+
+                const cryptoKey = await importKey(key);
+                decryptedData = await decrypt(encryptedData, cryptoKey);
+                contentEl.textContent = decryptedData;
+                // Apply syntax highlighting after decryption
+                hljs.highlightElement(contentEl);
+                document.getElementById('copyCodeBtn').classList.remove('hidden');
             } catch (err) {
                 console.error('Error loading content:', err);
                 contentEl.textContent = 'Failed to load content.';
