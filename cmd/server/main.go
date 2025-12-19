@@ -20,6 +20,7 @@ import (
 	"github.com/piheta/seq.re/internal/features/web"
 	localmw "github.com/piheta/seq.re/internal/middleware"
 	"github.com/piheta/seq.re/internal/shared"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	_ "github.com/piheta/seq.re/docs"
 )
@@ -93,27 +94,29 @@ func main() {
 	mux.Handle("GET /api/ip", mw.Public(ipHandler.GetPublicIP))
 	mux.Handle("GET /api/version", mw.Public(seqreHandler.GetVersion))
 
-	mux.Handle("POST /api/links", mw.Public(linkHandler.CreateLink))
+	mux.Handle("POST /api/links", localmw.RateLimit(2, 5, mw.Public(linkHandler.CreateLink)))
 	mux.Handle("GET /api/links/{short}", localmw.RateLimit(2, 5, mw.Public(linkHandler.GetLinkByShort)))
 	mux.Handle("POST /api/links/{short}/onetime", localmw.RateLimit(2, 5, mw.Public(linkHandler.RevealOneTimeLink)))
 
-	mux.Handle("POST /api/secrets", mw.Public(secretHandler.CreateSecret))
+	mux.Handle("POST /api/secrets", localmw.RateLimit(2, 5, mw.Public(secretHandler.CreateSecret)))
 	mux.Handle("GET /s/{short}", localmw.RateLimit(2, 5, mw.Public(secretHandler.GetSecretByShort)))
 	mux.Handle("POST /api/secrets/{short}/onetime", localmw.RateLimit(2, 5, mw.Public(secretHandler.RevealOneTimeSecret)))
 
-	mux.Handle("POST /api/images", mw.Public(imageHandler.CreateImage))
+	mux.Handle("POST /api/images", localmw.RateLimit(2, 5, mw.Public(imageHandler.CreateImage)))
 	mux.Handle("GET /i/{short}", localmw.RateLimit(2, 5, mw.Public(imageHandler.GetImageByShort)))
 	mux.Handle("POST /api/images/{short}/onetime", localmw.RateLimit(2, 5, mw.Public(imageHandler.RevealOneTimeImage)))
 
-	mux.Handle("POST /api/pastes", mw.Public(pasteHandler.CreatePaste))
+	mux.Handle("POST /api/pastes", localmw.RateLimit(2, 5, mw.Public(pasteHandler.CreatePaste)))
 	mux.Handle("GET /p/{short}", localmw.RateLimit(2, 5, mw.Public(pasteHandler.GetPasteByShort)))
 	mux.Handle("POST /api/pastes/{short}/onetime", localmw.RateLimit(2, 5, mw.Public(pasteHandler.RevealOneTimePaste)))
 
 	mux.Handle("GET /{short}", localmw.RateLimit(2, 5, mw.Public(linkHandler.RedirectByShort)))
 
+	mux.Handle("GET /api/metrics", promhttp.Handler())
+
 	server := &http.Server{
 		Addr:         ":8080",
-		Handler:      mw.SecurityHeaders(mw.RequestLogger(mux)),
+		Handler:      mw.SecurityHeaders(mw.RequestLogger(localmw.NewPrometheusMiddleware()(mux))),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

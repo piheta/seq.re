@@ -59,6 +59,7 @@ func (ts *TemplateService) RenderOnetimeReveal(w io.Writer, data any) error {
 
 func (ts *TemplateService) RenderError(w http.ResponseWriter, message string) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(404)
 	data := map[string]any{
 		"Error":        message,
 		"Version":      ts.version,
