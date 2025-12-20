@@ -93,9 +93,17 @@ func isValidRoutePrefix(path string) bool {
 func normalizePath(path string) string {
 	parts := strings.Split(path, "/")
 	for i, part := range parts {
-		if len(part) == 6 {
+		if len(part) == 6 && !isKnownResource(part) {
 			parts[i] = "{short}"
 		}
 	}
 	return strings.Join(parts, "/")
+}
+
+func isKnownResource(s string) bool {
+	switch s {
+	case "images", "pastes":
+		return true
+	}
+	return false
 }

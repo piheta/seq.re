@@ -53,3 +53,35 @@ func (r *PasteRepo) Delete(short string) error {
 		return err
 	})
 }
+
+func (r *PasteRepo) CountPastes() (encrypted, unencrypted int, err error) {
+	return encrypted, unencrypted, r.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = true
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+
+			if len(item.Key()) != 6 {
+				continue
+			}
+
+			_ = item.Value(func(val []byte) error {
+				var paste Paste
+				if err := json.Unmarshal(val, &paste); err != nil || paste.Content == "" {
+					return nil
+				}
+
+				if paste.Encrypted {
+					encrypted++
+				} else {
+					unencrypted++
+				}
+				return nil
+			})
+		}
+		return nil
+	})
+}

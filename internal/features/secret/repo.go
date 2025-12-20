@@ -53,3 +53,31 @@ func (r *SecretRepo) Delete(short string) error {
 		return err
 	})
 }
+
+func (r *SecretRepo) CountSecrets() (total int, err error) {
+	return total, r.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = true
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+
+			if len(item.Key()) != 6 {
+				continue
+			}
+
+			_ = item.Value(func(val []byte) error {
+				var secret Secret
+				if err := json.Unmarshal(val, &secret); err != nil || secret.Data == "" {
+					return nil
+				}
+
+				total++
+				return nil
+			})
+		}
+		return nil
+	})
+}

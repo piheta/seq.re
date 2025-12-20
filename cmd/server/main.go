@@ -18,8 +18,10 @@ import (
 	"github.com/piheta/seq.re/internal/features/secret"
 	"github.com/piheta/seq.re/internal/features/seqre"
 	"github.com/piheta/seq.re/internal/features/web"
+	"github.com/piheta/seq.re/internal/metrics"
 	localmw "github.com/piheta/seq.re/internal/middleware"
 	"github.com/piheta/seq.re/internal/shared"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	_ "github.com/piheta/seq.re/docs"
@@ -68,6 +70,16 @@ func main() {
 	pasteService := paste.NewPasteService(pasteRepo)
 
 	imageService.StartCleanupWorker(1 * time.Hour)
+
+	// Register Prometheus collectors
+	linkCollector := metrics.NewLinkCollector(linkRepo)
+	imageCollector := metrics.NewImageCollector(imageRepo)
+	pasteCollector := metrics.NewPasteCollector(pasteRepo)
+	secretCollector := metrics.NewSecretCollector(secretRepo)
+	prometheus.MustRegister(linkCollector)
+	prometheus.MustRegister(imageCollector)
+	prometheus.MustRegister(pasteCollector)
+	prometheus.MustRegister(secretCollector)
 
 	ipHandler := ip.NewIPHandler(ipService)
 	linkHandler := link.NewLinkHandler(linkService, templateService)
