@@ -102,7 +102,7 @@ func normalizePath(path string) string {
 
 func isKnownResource(s string) bool {
 	switch s {
-	case "images", "pastes":
+	case "images", "pastes", "secret":
 		return true
 	}
 	return false
