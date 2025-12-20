@@ -71,7 +71,7 @@ func (r *PasteRepo) CountPastes() (encrypted, unencrypted int, err error) {
 			_ = item.Value(func(val []byte) error {
 				var paste Paste
 				if err := json.Unmarshal(val, &paste); err != nil || paste.Content == "" {
-					return nil
+					return err
 				}
 
 				if paste.Encrypted {

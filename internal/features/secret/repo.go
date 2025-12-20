@@ -71,7 +71,7 @@ func (r *SecretRepo) CountSecrets() (total int, err error) {
 			_ = item.Value(func(val []byte) error {
 				var secret Secret
 				if err := json.Unmarshal(val, &secret); err != nil || secret.Data == "" {
-					return nil
+					return err
 				}
 
 				total++

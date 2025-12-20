@@ -71,7 +71,7 @@ func (r *LinkRepo) CountLinks() (encrypted, unencrypted int, err error) {
 			_ = item.Value(func(val []byte) error {
 				var link Link
 				if err := json.Unmarshal(val, &link); err != nil || link.URL == "" {
-					return nil
+					return err
 				}
 
 				if link.Encrypted {

@@ -71,7 +71,7 @@ func (r *ImageRepo) CountImages() (encrypted, unencrypted int, err error) {
 			_ = item.Value(func(val []byte) error {
 				var image Image
 				if err := json.Unmarshal(val, &image); err != nil || image.FilePath == "" {
-					return nil
+					return err
 				}
 
 				if image.Encrypted {
