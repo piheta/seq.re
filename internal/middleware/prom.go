@@ -46,11 +46,6 @@ func init() {
 func NewPrometheusMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.HasPrefix(r.URL.Path, "/static") {
-				next.ServeHTTP(w, r)
-				return
-			}
-
 			start := time.Now()
 			recorder := &responseRecorder{
 				ResponseWriter: w,
@@ -59,21 +54,48 @@ func NewPrometheusMiddleware() func(next http.Handler) http.Handler {
 
 			next.ServeHTTP(recorder, r)
 
-			path := r.URL.Path
-
-			parts := strings.Split(path, "/")
-			for i, part := range parts {
-				if len(part) == 6 {
-					parts[i] = "{id}"
-				}
+			if isValidRoutePrefix(r.URL.Path) {
+				path := normalizePath(r.URL.Path)
+				duration := time.Since(start).Seconds()
+				status := strconv.Itoa(recorder.statusCode)
+				HTTPRequestsTotal.WithLabelValues(r.Method, path, status).Inc()
+				HTTPRequestDuration.WithLabelValues(r.Method, path, status).Observe(duration)
 			}
-			path = strings.Join(parts, "/")
-
-			duration := time.Since(start).Seconds()
-			status := recorder.statusCode
-
-			HTTPRequestsTotal.WithLabelValues(r.Method, path, strconv.Itoa(status)).Inc()
-			HTTPRequestDuration.WithLabelValues(r.Method, path, strconv.Itoa(status)).Observe(duration)
 		})
 	}
+}
+
+func isValidRoutePrefix(path string) bool {
+	switch {
+	case strings.HasPrefix(path, "/static"):
+		return false
+	case path == "/":
+		return true
+	case strings.HasPrefix(path, "/tab/"):
+		return true
+	case strings.HasPrefix(path, "/web/"):
+		return true
+	case strings.HasPrefix(path, "/api/"):
+		return true
+	case strings.HasPrefix(path, "/i/"):
+		return true
+	case strings.HasPrefix(path, "/s/"):
+		return true
+	case strings.HasPrefix(path, "/p/"):
+		return true
+	case len(path) == 7 && path[0] == '/':
+		return true
+	default:
+		return false
+	}
+}
+
+func normalizePath(path string) string {
+	parts := strings.Split(path, "/")
+	for i, part := range parts {
+		if len(part) == 6 {
+			parts[i] = "{short}"
+		}
+	}
+	return strings.Join(parts, "/")
 }
