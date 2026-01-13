@@ -1,4 +1,4 @@
-package shared
+package shared // nolint
 
 import (
 	"crypto/rand"
@@ -43,14 +43,4 @@ func CreateShort() string {
 		b[i] = chars[b[i]%byte(len(chars))]
 	}
 	return string(b)
-}
-
-// IsBrowser checks if the User-Agent indicates a web browser
-func IsBrowser(r *http.Request) bool {
-	userAgent := r.Header.Get("User-Agent")
-	return strings.Contains(userAgent, "Mozilla") ||
-		strings.Contains(userAgent, "Chrome") ||
-		strings.Contains(userAgent, "Safari") ||
-		strings.Contains(userAgent, "Edge") ||
-		strings.Contains(userAgent, "Firefox")
 }

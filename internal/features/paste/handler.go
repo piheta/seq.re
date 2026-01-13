@@ -88,7 +88,7 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 		return shared.MapError(w, r, apierr.NewError(404, "not_found", "Paste not found"), h.templateService)
 	}
 
-	if paste.OneTime && shared.IsBrowser(r) {
+	if paste.OneTime && r.URL.Query().Get("cli") != "true" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]string{
 			"ID":   short,
@@ -102,7 +102,7 @@ func (h *PasteHandler) GetPasteByShort(w http.ResponseWriter, r *http.Request) e
 		return shared.MapError(w, r, apierr.NewError(404, "not_found", "Paste not found"), h.templateService)
 	}
 
-	if shared.IsBrowser(r) {
+	if r.URL.Query().Get("cli") != "true" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]any{
 			"Type":      "code",

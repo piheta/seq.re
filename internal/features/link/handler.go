@@ -46,7 +46,7 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 		return s.MapError(w, r, apierr.NewError(404, "url", "Link not found"), h.templateService)
 	}
 
-	if link.OneTime && s.IsBrowser(r) {
+	if link.OneTime && r.URL.Query().Get("cli") != "true" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]string{
 			"ID":   short,
@@ -60,7 +60,7 @@ func (h *LinkHandler) RedirectByShort(w http.ResponseWriter, r *http.Request) er
 		return s.MapError(w, r, apierr.NewError(404, "url", "Link not found"), h.templateService)
 	}
 
-	if s.IsBrowser(r) && link.Encrypted {
+	if r.URL.Query().Get("cli") != "true" && link.Encrypted {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := LinkResponse{URL: link.URL}
 		return h.templateService.RenderRedirect(w, data)

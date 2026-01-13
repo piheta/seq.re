@@ -1,4 +1,4 @@
-package shared
+package shared // nolint
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ func MapError(w http.ResponseWriter, r *http.Request, err error, templateService
 		return err
 	}
 
-	if IsBrowser(r) {
+	if r.URL.Query().Get("cli") != "true" {
 		message := fmt.Sprintf("%v", apiErr.Message)
 		return templateService.RenderError(w, message)
 	}

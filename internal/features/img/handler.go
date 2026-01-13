@@ -109,7 +109,7 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 		return s.MapError(w, r, apierr.NewError(404, "not_found", "Image not found"), h.templateService)
 	}
 
-	if imageCheck.OneTime && s.IsBrowser(r) {
+	if imageCheck.OneTime && r.URL.Query().Get("cli") != "true" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]string{
 			"ID":   short,
@@ -124,7 +124,7 @@ func (h *ImageHandler) GetImageByShort(w http.ResponseWriter, r *http.Request) e
 	}
 
 	if image.Encrypted {
-		if s.IsBrowser(r) {
+		if r.URL.Query().Get("cli") != "true" {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			data := map[string]string{
 				"Data":        string(imageData),

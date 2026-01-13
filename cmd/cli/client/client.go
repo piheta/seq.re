@@ -83,7 +83,7 @@ func (c *Client) GetVersion() (*models.VersionResponse, error) {
 
 // GetLink retrieves link information by short code
 func (c *Client) GetLink(short string) (*models.LinkResponse, error) {
-	resp, err := http.Get(c.BaseURL + "/api/links/" + short)
+	resp, err := http.Get(c.BaseURL + "/api/links/" + short + "?cli=true")
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to server: %w", err)
 	}
@@ -186,7 +186,7 @@ func (c *Client) CreateSecret(encryptedData string) (string, error) {
 
 // GetSecret retrieves a secret by short code
 func (c *Client) GetSecret(short string) (string, error) {
-	resp, err := http.Get(c.BaseURL + "/s/" + short)
+	resp, err := http.Get(c.BaseURL + "/s/" + short + "?cli=true")
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}
@@ -339,7 +339,7 @@ func (c *Client) CreateEncryptedImage(encryptedData []byte, onetime bool) (strin
 
 // GetImageRaw retrieves a raw (unencrypted) image by short code
 func (c *Client) GetImageRaw(short string) ([]byte, error) {
-	resp, err := http.Get(c.BaseURL + "/i/" + short)
+	resp, err := http.Get(c.BaseURL + "/i/" + short + "?cli=true")
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to server: %w", err)
 	}
@@ -362,7 +362,8 @@ func (c *Client) GetImageRaw(short string) ([]byte, error) {
 
 // GetImage retrieves an encrypted image by short code (returns base64 encoded data)
 func (c *Client) GetImage(short string) (string, error) {
-	resp, err := http.Get(c.BaseURL + "/i/" + short)
+	short += "?cli=true"
+	resp, err := http.Get(c.BaseURL + "/i/" + short + "?cli=true")
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)
 	}
@@ -455,6 +456,7 @@ func (c *Client) GetPasteRaw(short string) (string, error) {
 
 // GetPaste retrieves an encrypted paste by short code (returns base64 encoded data)
 func (c *Client) GetPaste(short string) (string, error) {
+	short += "?cli=true"
 	resp, err := http.Get(c.BaseURL + "/p/" + short)
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to server: %w", err)

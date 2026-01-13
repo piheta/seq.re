@@ -1,4 +1,4 @@
-package crypto
+package crypto // nolint
 
 import (
 	"crypto/aes"

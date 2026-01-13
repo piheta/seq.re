@@ -87,7 +87,7 @@ func (h *SecretHandler) GetSecretByShort(w http.ResponseWriter, r *http.Request)
 		return s.MapError(w, r, apierr.NewError(404, "not_found", "Secret not found or already viewed"), h.templateService)
 	}
 
-	if s.IsBrowser(r) {
+	if r.URL.Query().Get("cli") != "true" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		data := map[string]string{
 			"ID":   short,
